@@ -10,17 +10,17 @@ blog post"). This fork adds functionality not added to the original branch.
 For the best introduction to get started with `git flow`, please read Jeff
 Kreeftmeijer's blog post:
 
-[http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/](http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/)
+[Using git-flow to automate your git branching workflow](https://jeffkreeftmeijer.com/git-flow/)
 
 Or have a look at one of these screen casts:
 
-* [How to use a scalable Git branching model called git-flow](http://buildamodule.com/video/change-management-and-version-control-deploying-releases-features-and-fixes-with-git-how-to-use-a-scalable-git-branching-model-called-gitflow) (by Build a Module)
-* [A short introduction to git-flow](http://vimeo.com/16018419) (by Mark Derricutt)
-* [On the path with git-flow](https://vimeo.com/codesherpas/on-the-path-gitflow) (by Dave Bock)
+* [How to use a scalable Git branching model called git-flow](https://buildamodule.com/index.php?q=video/change-management-and-version-control-deploying-releases-features-and-fixes-with-git-how-to-use-a-scalable-git-branching-model-called-gitflow) (by Build a Module)
+* [A short introduction to git-flow](https://vimeo.com/16018419) (by Mark Derricutt)
+* [On the path with git-flow](https://vimeo.com/37408017) (by Dave Bock)
 
 A quick cheatsheet was made by Daniel Kummer:
 
-[http://danielkummer.github.io/git-flow-cheatsheet/](http://danielkummer.github.io/git-flow-cheatsheet/)
+[https://danielkummer.github.io/git-flow-cheatsheet/](https://danielkummer.github.io/git-flow-cheatsheet/)
 
 ## Installing git-flow
 
@@ -29,18 +29,18 @@ See the Wiki for up-to-date [Installation Instructions](https://github.com/peter
 
 ## Integration with your shell
 
-For those who use the [Bash](http://www.gnu.org/software/bash/) or [ZSH](http://www.zsh.org)
+For those who use the [Bash](https://www.gnu.org/software/bash/) or [ZSH](https://www.zsh.org/)
 shell, you can use my [fork of git-flow-completion](https://github.com/petervanderdoes/git-flow-completion)
 which includes several additions for git-flow (AVH Edition), or you can use the
-original [git-flow-completion](http://github.com/bobthecow/git-flow-completion)
-project by [bobthecow](http://github.com/bobthecow). Both offer tab-completion
+original [git-flow-completion](https://github.com/bobthecow/git-flow-completion)
+project by [bobthecow](https://github.com/bobthecow). Both offer tab-completion
 for git-flow subcommands and branch names with my fork including tab-completion
 for the commands not found in the original git-flow.
 
 
 ## FAQ
 
-* See the [FAQ](http://github.com/petervanderdoes/gitflow-avh/wiki/FAQ) section
+* See the [FAQ](https://github.com/petervanderdoes/gitflow-avh/wiki/FAQ) section
 of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
@@ -51,14 +51,14 @@ Starting with version 1.0, the project uses the following scheme:
 
 This project is under constant development. Feedback and suggestions are very
 welcome and I encourage you to use the [Issues
-list](http://github.com/petervanderdoes/gitflow-avh/issues) on Github to provide that
+list](https://github.com/petervanderdoes/gitflow-avh/issues) on Github to provide that
 feedback.
 
 Feel free to fork this repository and to commit your additions. For a list of
 all contributors, please see the [AUTHORS](AUTHORS) file.
 
 Any questions, tips, or general discussion can be posted to the Google group:
-[http://groups.google.com/group/gitflow-users](http://groups.google.com/group/gitflow-users)
+[http://groups.google.com/group/gitflow-users](https://groups.google.com/g/gitflow-users)
 This is the original group set up to support the nvie branch, but I am monitoring
 the list as well for any questions related to my version.
 When you do post a question on the list please indicate which version you are,
@@ -118,7 +118,7 @@ those questions to accept the (sane) default suggestions.
 
 The ``-d`` flag will accept all defaults.
 
-![Screencast git flow init](http://i.imgur.com/lFQbY5V.gif)
+![Screencast git flow init](https://i.imgur.com/lFQbY5V.gif)
 
 ### Creating feature/release/hotfix/support branches
 
