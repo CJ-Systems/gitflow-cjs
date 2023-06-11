@@ -238,5 +238,5 @@ Of course, the best way to show your appreciation for the git-flow tool itself
 remains contributing to the community.  If you'd like to show your appreciation
 in another way, however, consider donating through PayPal:
 
-https://www.paypal.com/donate/?hosted_button_id=GU25NCHMVMT9U
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=GU25NCHMVMT9U)
 
