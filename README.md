@@ -24,7 +24,7 @@ A quick cheatsheet was made by Daniel Kummer:
 
 ## Installing git-flow
 
-See the Wiki for up-to-date [Installation Instructions](https://github.com/petervanderdoes/gitflow-avh/wiki/Installation).
+See the Wiki for up-to-date [Installation Instructions](https://github.com/CJ-Systems/gitflow-cjs/wiki/Installation).
 
 
 ## Integration with your shell
@@ -40,7 +40,7 @@ for the commands not found in the original git-flow.
 
 ## FAQ
 
-* See the [FAQ](https://github.com/petervanderdoes/gitflow-avh/wiki/FAQ) section
+* See the [FAQ](https://github.com/CJ-Systems/gitflow-cjs/wiki/FAQ) section
 of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
@@ -51,7 +51,7 @@ Starting with version 1.0, the project uses the following scheme:
 
 This project is under constant development. Feedback and suggestions are very
 welcome and I encourage you to use the [Issues
-list](https://github.com/petervanderdoes/gitflow-avh/issues) on Github to provide that
+list](https://github.com/CJ-Systems/gitflow-cjs/issues) on Github to provide that
 feedback.
 
 Feel free to fork this repository and to commit your additions. For a list of
@@ -230,4 +230,13 @@ For a wide variety of commands hooks or filters can be called before and after
 the command.  
 The files should be placed in .git/hooks  
 In the directory hooks you can find examples of all the hooks available.
+
+
+## Showing your appreciation
+
+Of course, the best way to show your appreciation for the git-flow tool itself
+remains contributing to the community.  If you'd like to show your appreciation
+in another way, however, consider donating through PayPal:
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=GU25NCHMVMT9U)
 
