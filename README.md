@@ -69,8 +69,8 @@ using the complete version number.
 Fork the repository.  Then, run:
 
 ```shell
-git clone -b master git@github.com:<username>/gitflow-avh.git
-cd gitflow-avh
+git clone -b master git@github.com:<username>/gitflow-cjs.git
+cd gitflow-cjs
 ```
 
 The `-b master` switch has to be added since the fork operation automatically
