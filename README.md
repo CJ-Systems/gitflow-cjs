@@ -24,7 +24,7 @@ A quick cheatsheet was made by Daniel Kummer:
 
 ## Installing git-flow
 
-See the Wiki for up-to-date [Installation Instructions](https://github.com/petervanderdoes/gitflow-avh/wiki/Installation).
+See the Wiki for up-to-date [Installation Instructions](https://github.com/CJ-Systems/gitflow-cjs/wiki/Installation).
 
 
 ## Integration with your shell
@@ -40,7 +40,7 @@ for the commands not found in the original git-flow.
 
 ## FAQ
 
-* See the [FAQ](http://github.com/petervanderdoes/gitflow-avh/wiki/FAQ) section
+* See the [FAQ](https://github.com/CJ-Systems/gitflow-cjs/wiki/FAQ) section
 of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
@@ -51,7 +51,7 @@ Starting with version 1.0, the project uses the following scheme:
 
 This project is under constant development. Feedback and suggestions are very
 welcome and I encourage you to use the [Issues
-list](http://github.com/petervanderdoes/gitflow-avh/issues) on Github to provide that
+list](https://github.com/CJ-Systems/gitflow-cjs/issues) on Github to provide that
 feedback.
 
 Feel free to fork this repository and to commit your additions. For a list of
@@ -231,14 +231,3 @@ the command.
 The files should be placed in .git/hooks  
 In the directory hooks you can find examples of all the hooks available.
 
-## Showing your appreciation
-
-Of course, the best way to show your appreciation for the git-flow tool itself
-remains contributing to the community.  If you'd like to show your appreciation
-in another way, however, consider donating through PayPal:
-
-[![PayPal][2]][1]
-
-[1]: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=S85FXJ9EBHAF2&lc=US&item_name=gitflow&item_number=gitflow&no_note=0&cn=Add%20special%20instructions%20to%20the%20seller&no_shipping=1&rm=1&return=https%3a%2f%2fgithub%2ecom%2fpetervanderdoes%2fgitflow&cancel_return=https%3a%2f%2fgithub%2ecom%2fpetervanderdoes%2fgitflow&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
-
-[2]: https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif
