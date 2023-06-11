@@ -24,7 +24,7 @@ A quick cheatsheet was made by Daniel Kummer:
 
 ## Installing git-flow
 
-See the Wiki for up-to-date [Installation Instructions](https://github.com/petervanderdoes/gitflow-avh/wiki/Installation).
+See the Wiki for up-to-date [Installation Instructions](https://github.com/CJ-Systems/gitflow-cjs/wiki/Installation).
 
 
 ## Integration with your shell
@@ -40,7 +40,7 @@ for the commands not found in the original git-flow.
 
 ## FAQ
 
-* See the [FAQ](http://github.com/petervanderdoes/gitflow-avh/wiki/FAQ) section
+* See the [FAQ](https://github.com/CJ-Systems/gitflow-cjs/wiki/FAQ) section
 of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
@@ -51,7 +51,7 @@ Starting with version 1.0, the project uses the following scheme:
 
 This project is under constant development. Feedback and suggestions are very
 welcome and I encourage you to use the [Issues
-list](http://github.com/petervanderdoes/gitflow-avh/issues) on Github to provide that
+list](https://github.com/CJ-Systems/gitflow-cjs/issues) on Github to provide that
 feedback.
 
 Feel free to fork this repository and to commit your additions. For a list of
