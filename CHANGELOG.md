@@ -40,8 +40,13 @@
 
 # Changelog
 
+#### 1.12.5
+* Cherry-Pick  Speed up "list" command execution #325 from gpongelli/gitflow-avh/tree/speedUpListCmd
+* Updated readme links Thank You [JamesSkemp](https://github.com/JamesSkemp)
+* Support gitflow-cjs being used as a plugin for zsh users via antigen. Thank You [matthewfranglen](https://github.com/matthewfranglen)
+
 #### 1.12.4-dev0
-* Preparation for next release
+* Preparation for first "official" release from CJ-Systems
 
 #### 1.12.3
 * Explicitly get the default values from the system and global config.
@@ -98,13 +103,13 @@
 * Bugfix: Errors when initializing git flow and useconfigonly is set but the name and/or email has not been set.
 * Bugfix: Report summary on finish is incorrect.
 * Missing push on bugfix finish
-* Allow a dirty tree when starting a hotfix/support/release branch if set to do so.  
+* Allow a dirty tree when starting a hotfix/support/release branch if set to do so.
 If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty tree.
 * Bugfix: Error when trying to delete a non-existent remote branch
 * Feature: Add rename command to bugfix/hotfix/feature
 
 [Andreas Heiduk][asheiduk]
-* git flow * rebase now supports rebase.autoStash flag  
+* git flow * rebase now supports rebase.autoStash flag
   git rebase can automatically cleanup the working tree. Therefore skip the test when and where appropriate.
 
 #### 1.10.2
@@ -125,8 +130,8 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 * When finishing a release have the ability to fast-forward the master branch, if possible.
   This is controlled by the flag --ff-master.
 * Add new flag -T, --tagname to override the tag name when finishing a release or hotfix.
-* Allow multiple hotfix branches by setting the config allowmultihotfix to true.  
-  The command to set it is  
+* Allow multiple hotfix branches by setting the config allowmultihotfix to true.
+  The command to set it is
 
 [Kridsada Thanabulpong][sirn]
 * Fix infinite loop during Darwin link resolving.
@@ -165,12 +170,12 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 #### 1.8.0
 [Peter van der Does][petervanderdoes]
 * Add rebase action to release, hotfix and support.
-* Shortcut for rebase commands.  
-  Introduce the following new command:  
+* Shortcut for rebase commands.
+  Introduce the following new command:
   * git flow rebase
 
   This command will perform the action on the branch that's currently active.
-* Use the base branch when doing a git flow feature diff.  
+* Use the base branch when doing a git flow feature diff.
   When doing a diff on the feature branch use the base branch which this
   feature originated from. It will show the committed changes.
 * Problem when certain variables are set before executing git-flow.
@@ -192,14 +197,14 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 #### 1.7.0
 [Peter van der Does][petervanderdoes]
 * Refactor the gitflow override flag functions.
-* Shortcut for finish, delete, and publish commands.  
-  Introduce the following new commands:  
+* Shortcut for finish, delete, and publish commands.
+  Introduce the following new commands:
   * git flow finish
   * git flow delete
   * git flow publish
 
   These commands will perform the action on the branch that's currently active.
-* No branch is needed for the following function:  
+* No branch is needed for the following function:
   * git flow feature publish/finish/delete
   * git flow release publish/finish/delete
   * git flow hotfix publish/finish/delete
@@ -214,12 +219,12 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 * Fix sanity check for release track command.
 
 [Opher Vishnia][OpherV]
-* Fix feature pull.  
+* Fix feature pull.
   The pull request fails when there's no local branch with the same name as the
   remote branch.
 
 [Leonid Komarovsky][shpoont]
-* Option for global hooks and filters directory.  
+* Option for global hooks and filters directory.
   This is only for hooks and filters related to git-flow, not the standard git
   hooks.
 
@@ -230,7 +235,7 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 #### 1.6.0
 [Peter van der Does][petervanderdoes]
-* Add ability to short-circuit the version filters.  
+* Add ability to short-circuit the version filters.
   An exit of 127 will short-circuit the process.
 * Output when finishing a branch is wrong.
 
@@ -244,7 +249,7 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 #### 1.5.3
 [Peter van der Does][petervanderdoes]
-* Bugfix: Error about deleting branch when using squash option.  
+* Bugfix: Error about deleting branch when using squash option.
   When using the squash option for release/feature finish, the release/feature
   branch is not deleted.
 
@@ -272,21 +277,21 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 * Add default flag for flag showcommands.
 
 [Florian Gamböck][floga]
-* Bugfix: Fix variable non-zero test  
+* Bugfix: Fix variable non-zero test
   Due to missing quotation marks, the -n test won't work properly, leading to
   always returning true and overriding variables with nothing.
 
 
 #### 1.5.0
 [Peter van der Does][petervanderdoes]
-* Add the ability to set defaults for flag.  
+* Add the ability to set defaults for flag.
   You can now set defaults for flags by setting environment variables.
-* Add flag no-ff to feature finish.  
+* Add flag no-ff to feature finish.
   This gives the ability to never fast-forward a merge, even when it's only
   one commit.
 * Bugfix: Error in a long flag name for release finish
 * Function in gitflow-shFlags refactored to make it faster.
-* Add flag --squash-info to release/feature finish.  
+* Add flag --squash-info to release/feature finish.
   When you use the flag --squash while finishing a release or feature branch,
   the logs don't make it clear which branch you merged. The new flag will add
   an extra comment to the commit message, stating which branch was used for the
@@ -301,33 +306,33 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 #### 1.4.0
 [Peter van der Does][petervanderdoes]
-* Remember the base.  
+* Remember the base.
   With the commands feature/hotfix/release start you can give a base from which
   the new branch will be created. Upon finishing this branch it will
-  automatically merge the branch back into the base as given during the start.  
-  If no base is given the normal functionality will be followed.  
+  automatically merge the branch back into the base as given during the start.
+  If no base is given the normal functionality will be followed.
   With the hotfix and release, if a base is given and it's not the
   DEVELOP_BRANCH, the branch will *NOT* be merged back into the $DEVELOP_BRANCH
   upon finishing this branch.
-* New config command.  
+* New config command.
   git flow config base. This can be used to set and get the base for
   feature/hotfix/release branches so it can be used when finishing these
   branches.
 * Get the correct working directory when the git-flow file is a symbolic link.
 * Don't check/compare hotfix and base branch when branch is merged already.
-* Remove export POSIXLY_CORRECT.  
+* Remove export POSIXLY_CORRECT.
   Setting this environment variable can mess things up when git-flow is used in
   combination with other shell scripts.
-* Update gitflow-shFlags from upstream.  
+* Update gitflow-shFlags from upstream.
   Besides other improvements this update eliminates the use of external system
   calls on a majority of systems which in theory leads to a speed increase of
   about 20%.
-* Use GNU getopt on BSD systems.  
+* Use GNU getopt on BSD systems.
   BSD getopt doesn't support long options in commands but the GNU getopt does.
 
 [Alexandre Dutra][adutra]
 * Git refuses to delete local branch with "-d" if it is tracking a remote one.
-* Can't always delete current release/hotfix local branch on finish  
+* Can't always delete current release/hotfix local branch on finish
   Situation can occur you are on the local branch the script wants to delete, if
   you are you can't delete that branch. We'll switch to the base branch when
   you are deleting the branch you currently are on.
@@ -337,24 +342,24 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 #### 1.3.0
 [Peter van der Does][petervanderdoes]
-* Make name in feature publish optional.  
+* Make name in feature publish optional.
   Instead of always having to add the branch when doing a git flow feature
-  publish, the name should be optional.  
+  publish, the name should be optional.
   When a name isn't given, the current branch, if it's a feature branch,
   will be published.
-* Add option to select configuration file usage  
+* Add option to select configuration file usage
   As with the regular git config, git flow init now has the
   option --file, --global, --system and --local. --local is default.
-* Add a new command.  
-  New command git flow config is added.  
+* Add a new command.
+  New command git flow config is added.
   With this command you can see your current git flow configuration and you
   can also set the options.
-* Environment settings for git-flow only.  
+* Environment settings for git-flow only.
   With git you can set environment variables to change behavior, like
-  GIT_MERGE_AUTOEDIT for example.  
+  GIT_MERGE_AUTOEDIT for example.
   You can add these exports to the file ~/.gitflow_export if you only want
-  to set the environment variable for git-flow.  
-* Bugfix: Missing command hotfix track.  
+  to set the environment variable for git-flow.
+* Bugfix: Missing command hotfix track.
   The command git flow hotfix track is not implemented.
 
 #### 1.2.1
@@ -366,12 +371,12 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 * Improve the help output of the commands.
 * Fix problem with init function on BSD systems.
 * Add initialize function to git flow version.
-* Add parameter --showcommands to all commands.  
+* Add parameter --showcommands to all commands.
   This will show the git commands performed while executing the command. Thanks
   to [Jerome Baum][jeromebaum] for the original implementation.
 
 [Daniel Dehennin][baby-gnu]
-* Display where user is on finish.  
+* Display where user is on finish.
   Some commands did not display the branch you are on after the command
   finished.
 * When finishing a hotfix/release and it's to be tagged, the tag must not exist.
@@ -380,16 +385,16 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 [Peter van der Does][petervanderdoes]
 * Bugfix: feature finish does double merge when using squash option.
 
-* Add the ability to keep/delete local/remote branches on finish.  
+* Add the ability to keep/delete local/remote branches on finish.
   When finishing a release/hotfix/feature you now can keep/delete the
   local/remote release/hotfix/feature branch.
 
-* New command: git flow release branch  
+* New command: git flow release branch
   With this command you can directly release a given branch. There is no need
   to start a new release and finish it. You can not use this command on the
   git-flow branches feature/hotfix/release/support.
 
-* Do not display object fetch summary if flag was not set.  
+* Do not display object fetch summary if flag was not set.
   Thanks to [Daniel Dehennin][baby-gnu].
 
 * Bugfix: Checking if branch exists will fail for remote branches.
@@ -398,28 +403,28 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 * Bugfix: When running git flow init an error message pops up.
 
-* Show correct help for subactions.  
+* Show correct help for subactions.
   When requesting help with -h for the subactions, the help would show the
   incorrect command line.
 
-* Support reading the tag message from a file in release/hotfix finish.  
+* Support reading the tag message from a file in release/hotfix finish.
   Add the option -f,--messagefile to release and hotfix finish. Thanks to
   [Steve Streeting][sinbad] for the original coding.
 
-* Bugfix: git_current_branch fails for git prior 1.7.10.  
+* Bugfix: git_current_branch fails for git prior 1.7.10.
   git symbolic-ref does not have the --short option prior to version 1.7.10.
   Bug found by [Daniel Dehennin][baby-gnu].
 
-* Clean up code.  
-  Remove all porcelain commands.  
+* Clean up code.
+  Remove all porcelain commands.
   Refactor code.
 
-* Improve the back-merge functionality.  
+* Improve the back-merge functionality.
   Adds an command line option (-b), which the user can utilize if the user
   doesn't want to back-merge but rather merge the release branch into
   develop.
 
-* Add the sub-action delete to sub-commands feature, release and hotfix.  
+* Add the sub-action delete to sub-commands feature, release and hotfix.
   The sub-commands feature, release and hotfix now have a new sub-action,
   delete. With that action you can delete the branches, locally and remote.
   The action has two options, -f and -r. With -f you can force the deletion,
@@ -427,21 +432,21 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
   branch will also be deleted.
 
 [Daniel Dehennin][baby-gnu]
-* Bugfix: release/feature/hotfix start -F fails.  
+* Bugfix: release/feature/hotfix start -F fails.
   Usage of positional parameters requires to eval ${FLAGS_ARGV}. The "eval set"
   in function call does not propagate to the caller.
 
-* Accept tags as base for hotfix/release/support start.  
+* Accept tags as base for hotfix/release/support start.
   Commit pointed by tags are reachable with ^0\[1\].
 
 * Check for parameter existence for branch and tag existence helpers.
 
-* Do not finish hotfixes if they have no commits.  
+* Do not finish hotfixes if they have no commits.
   A hotfix branch must have some commits and be ahead of master.
 
 * Bugfix: When running git flow version an error message pops up.
 
-* Reorder fetch and sanity checks.  
+* Reorder fetch and sanity checks.
   When a user requests a fetch for git flow {feature|hotfix|support} start, do
   this before some sanity checks to avoid any conflict in branch names
   and/or version.
@@ -449,16 +454,16 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 * Fix flag test in cmd_delete().
 
 [Myke Hines][mykehsd]
-* Feature and Release squashing options.  
+* Feature and Release squashing options.
   This allows a -S option to both feature and releasing finishing actions so
   that developers can squash commits into one large one.
 
 [Peter Ragone][pcragone]
-* Add init to git-flow-{feature,release,hotfix,support}.  
+* Add init to git-flow-{feature,release,hotfix,support}.
   Fixes the relatively minor issue where 'git flow subcommand help'
   gives "Not a gitflow-enabled repo yet".
 
-* Special thanks to the following individual:  
+* Special thanks to the following individual:
   [Gert Van Gool][gvangool]
 
 #### 1.0-avh
@@ -466,13 +471,13 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 * Remove trailing whitespace.
 
-* Updated from latest develop branch from nvie.  
+* Updated from latest develop branch from nvie.
   Some features were still missing.
 
-* Remove the submodule shFlags.  
+* Remove the submodule shFlags.
   Instead of the submodule we'll just use the file.
 
-* When finishing a release or hotfix, use tag for back-merging if available.  
+* When finishing a release or hotfix, use tag for back-merging if available.
   When a release or hotfix branch is tagged, the tag is never merged into the
   develop branch, it is preferable to have the tag in the develop branch as
   well, for use with git describe for example.
@@ -481,15 +486,15 @@ If the config `gitflow.allowdirty` is set to `true`, allow starting from a dirty
 
 * Bugfix: Typo when pulling existing feature from remote.Thanks to [John Harrison][bloomonkey],  [Miltos][mallamanis], [Kostas][kperi] and [memleak][memleak].
 
-* Wrong variable names in the bare-bones.  
+* Wrong variable names in the bare-bones.
   The wrong variable name is set, this can lead to confusing on what's
   passed to the script,
 
 [Steve Streeting][sinbad]
-* Fixes the suggested name for the integration branch.  
+* Fixes the suggested name for the integration branch.
   When git init -d is executed on a repo with multiple branches, the
   suggested name for the integration branch could possibly be the same name
-  that was already selected for the production release branch.  
+  that was already selected for the production release branch.
   If no suggested name is determined the suggested name remains empty which
   leads to all sorts of other problems.
 
