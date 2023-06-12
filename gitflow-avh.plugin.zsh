@@ -6,8 +6,8 @@
 # http://antigen.sharats.me/
 # https://github.com/zsh-users/antigen
 
-# Install gitflow-avh:
-# antigen bundle petervanderdoes/gitflow-avh --branch=master
+# Install gitflow-avh with antigen:
+# antigen bundle CJ-Systems/gitflow-cjs --branch=master
 # Bundles installed by antigen are available for use immediately.
 
 # Update gitflow-avh (and all other antigen bundles):
