@@ -555,7 +555,6 @@ Start a new release branch
 h,help!              Show this help
 showcommands!        Show git commands while executing them
 F,[no]fetch          Fetch from $ORIGIN before performing finish
-v,verbose!           Verbose (more) output
 "
 	local base
 

@@ -40,6 +40,9 @@
 
 # Changelog
 
+#### 1.12.6-DEV.1
+* Fix release start --help showing invalid option
+
 #### 1.12.5
 * Cherry-Pick  Speed up "list" command execution #325 from gpongelli/gitflow-avh/tree/speedUpListCmd
 * Updated readme links Thank You [JamesSkemp](https://github.com/JamesSkemp)
