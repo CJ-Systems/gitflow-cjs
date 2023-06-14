@@ -66,33 +66,22 @@ using the complete version number.
 
 ## Contributing
 
-Fork the repository.  Then, run:
+If you are resubmiting an open pull request see below. If submiting a new pull request addressing an already open issue with gitflow-avh please link the relevant issue in the description. For any new issues please see below
 
-```shell
-git clone -b master git@github.com:<username>/gitflow-cjs.git
-cd gitflow-cjs
-```
+### Quick Start for new issues
 
-The `-b master` switch has to be added since the fork operation automatically
-clones the `develop` branch of the official gitflow repository and cloning it
-results in a local repository with just a `develop` branch.
+* Please fork and clone a local copy of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs).
+* Create a seperate issue branch based off develop.
+* Commit commit you fix to the local branch.
+* Please update your local copy with the latest devlop branch of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)
+* Rebase develop onto your local branch.
+* Push your fix to your fork.
+* When ready to submit a pull request.
 
-If you do not have gitflow installed yet install it by running `make && make install`.
+### How to submit a pull request
+When resubmitting an open pull request from [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh) the base repository will need to be changed from petervanderdoes/gitflow-avh to CJ-Systems/gitflow-cjs.
 
-After that initialize the local gitflow repository with gitflow itself:
-
-```shell
-git flow init -d
-git flow feature start <your feature>
-```
-
-Then, do work and commit your changes.
-
-```shell
-git flow feature publish <your feature>
-```
-
-When done, open a pull request to your feature branch.
+For any new PRs releated to gitflow-cjs you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
 
 ## License terms
 
