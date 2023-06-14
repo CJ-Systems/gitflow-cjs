@@ -66,33 +66,20 @@ using the complete version number.
 
 ## Contributing
 
-Fork the repository.  Then, run:
+### Quick Start
 
-```shell
-git clone -b master git@github.com:<username>/gitflow-cjs.git
-cd gitflow-cjs
-```
+Please fork and create a local clone of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs).
+Create a seperate issue branch based off develop.
+Commit all changes on your local issue branch.
+When ready to submit a pull request.
 
-The `-b master` switch has to be added since the fork operation automatically
-clones the `develop` branch of the official gitflow repository and cloning it
-results in a local repository with just a `develop` branch.
+### How to submit a pull request
+* Update your local copy of develop
+* Rebase any changes onto your issue branch
+* Merge you issue branch into develop.
+* Push your changes and open a pull request to your develop branch
 
-If you do not have gitflow installed yet install it by running `make && make install`.
-
-After that initialize the local gitflow repository with gitflow itself:
-
-```shell
-git flow init -d
-git flow feature start <your feature>
-```
-
-Then, do work and commit your changes.
-
-```shell
-git flow feature publish <your feature>
-```
-
-When done, open a pull request to your feature branch.
+In the pull request description you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
 
 ## License terms
 
