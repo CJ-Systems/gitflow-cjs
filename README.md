@@ -66,20 +66,22 @@ using the complete version number.
 
 ## Contributing
 
-### Quick Start
+If you are resubmiting an open pull request see below. If submiting a new pull request addressing an already open issue with gitflow-avh please link the relevant issue in the description. For any new issues please see below
 
-Please fork and create a local clone of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs).
-Create a seperate issue branch based off develop.
-Commit all changes on your local issue branch.
-When ready to submit a pull request.
+### Quick Start for new issues
+
+* Please fork and clone a local copy of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs).
+* Create a seperate issue branch based off develop.
+* Commit commit you fix to the local branch.
+* Please update your local copy with the latest devlop branch of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)
+* Rebase develop onto your local branch.
+* Push your fix to your fork.
+* When ready to submit a pull request.
 
 ### How to submit a pull request
-* Update your local copy of develop
-* Rebase any changes onto your issue branch
-* Merge you issue branch into develop.
-* Push your changes and open a pull request to your develop branch
+When resubmitting an open pull request from [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh) the base repository will need to be changed from petervanderdoes/gitflow-avh to CJ-Systems/gitflow-cjs.
 
-In the pull request description you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
+For any new PRs releated to gitflow-cjs you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
 
 ## License terms
 
