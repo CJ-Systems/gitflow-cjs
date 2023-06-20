@@ -1,9 +1,14 @@
-# git-flow (AVH Edition)
+# git-flow (CJS Edition)
 
 A collection of Git extensions to provide high-level repository operations
 for Vincent Driessen's [branching model](http://nvie.com/git-model "original
 blog post"). This fork adds functionality not added to the original branch.
 
+## Why another git-flow fork
+The last commit to [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh)
+was on May 23, 2019. Since then there have been a number of issues opened that have
+not be resolved. This fork will address those outstanding issues and open PR's along
+with continueing to maintain the git-flow branching model.
 
 ## Getting started
 
@@ -45,7 +50,7 @@ of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
 \<MAJOR\>.\<MINOR\>.\<REVISION\>\
-* AVH is the acronym of "A VirtualHome"
+* CJS is the acronym of "CJ Systems"
 
 ## Please help out
 
