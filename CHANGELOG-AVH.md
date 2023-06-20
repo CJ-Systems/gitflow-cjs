@@ -40,17 +40,6 @@
 
 # Changelog
 
-#### 1.12.6-DEV.1
-* Fix release start --help showing invalid option
-
-#### 1.12.5
-* Cherry-Pick  Speed up "list" command execution #325 from gpongelli/gitflow-avh/tree/speedUpListCmd
-* Updated readme links Thank You [JamesSkemp](https://github.com/JamesSkemp)
-* Support gitflow-cjs being used as a plugin for zsh users via antigen. Thank You [matthewfranglen](https://github.com/matthewfranglen)
-
-#### 1.12.4-dev0
-* Preparation for first "official" release from CJ-Systems
-
 #### 1.12.3
 * Explicitly get the default values from the system and global config.
 
