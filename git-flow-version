@@ -38,7 +38,7 @@
 #
 
 
-GITFLOW_VERSION=2.0.0
+GITFLOW_VERSION=2.0.1
 
 initialize() {
 	# A function can not be empty. Comments count as empty.
@@ -58,7 +58,7 @@ For more specific help type the command followed by --help
 }
 
 cmd_default() {
-	echo "$GITFLOW_VERSION (AVH Edition)"
+	echo "$GITFLOW_VERSION (CJS Edition)"
 }
 
 cmd_help() {

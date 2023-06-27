@@ -5,9 +5,9 @@
 # http://github.com/petervanderdoes/gitflow-avh/blob/master/Makefile
 
 # Licensed under the same restrictions as git-flow:
-# http://github.com/petervanderdoes/gitflow-avh/blob/develop/LICENSE
+# http://github.com/CJ-Systems/gitflow-cjs/blob/develop/LICENSE
 
-# Updated for the fork at petervanderdoes
+# Updated for the fork at CJ-Systems
 
 usage() {
 	echo "Usage: [environment] gitflow-installer.sh [install|uninstall] [stable|develop|version] [tag]"
@@ -28,7 +28,7 @@ if [ -z "$REPO_NAME" ] ; then
 fi
 
 if [ -z "$REPO_HOME" ] ; then
-	REPO_HOME="https://github.com/petervanderdoes/gitflow-avh.git"
+	REPO_HOME="https://github.com/CJ-Systems/gitflow-cjs.git"
 fi
 
 EXEC_PREFIX="$PREFIX"
