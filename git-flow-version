@@ -38,7 +38,7 @@
 #
 
 
-GITFLOW_VERSION=2.0.1
+GITFLOW_VERSION=2.1.0-SNAPSHOT
 
 initialize() {
 	# A function can not be empty. Comments count as empty.
