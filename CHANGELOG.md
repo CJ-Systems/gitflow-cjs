@@ -1,5 +1,11 @@
 # Changelog
 
+#### 2.1.0-SNAPSHOT
+* fix: multi-line tag message when using -m
+
+**NOTE:** The format for a multi-line tag message is now "$(printf 'line of text with \n escape codes placed as needed for proper formating of the message')"
+
+
 #### 2.0.1
 * fix incorrect version identification along with updating source repository in gitflow-installer. Corrections pointed out by [bobstuart](https://github.com/bobstuart)
 
