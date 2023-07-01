@@ -1,5 +1,13 @@
 # Changelog
 
+#### 2.1.0
+* feat: add create command to release allowing for a single step release prodution
+* feat: add missing hook script filter-flow-release-finish-version
+* fix: multi-line tag message when using -m
+* docs: update readme with better description as to why this fork was created. Thank You [shaedrick](https://github.com/shaedrich)
+**NOTE:** The format for a multi-line tag message is now "$(printf 'line of text with \n escape codes placed as needed for proper formating of the message')"
+
+
 #### 2.0.1
 * fix incorrect version identification along with updating source repository in gitflow-installer. Corrections pointed out by [bobstuart](https://github.com/bobstuart)
 
