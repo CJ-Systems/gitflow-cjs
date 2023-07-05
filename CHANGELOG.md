@@ -1,5 +1,15 @@
 # Changelog
 
+#### 2.2.0-SNAPSHOT
+* feat(feature): add release sub command. Thank You [codesurf42](https://github.com/codesurf42) for the initial pr
+* feat(init): add sign flag to create initial signed commit
+* feat(init): add support for "Support Git Environment Credentials" pull request #19 from filipekiss/feature/environment_credentials
+* docs: update repository url in source files
+* docs: update copyright information in source files
+* fix: wording for help text in git flow log pull request #15 from Shea690901/hotfix/git-flow-log_help-message
+* refactor(git-flow): add support for busybox-readlink request #12 from KAction/readlink-busybox
+
+
 #### 2.1.0
 * feat: add create command to release allowing for a single step release prodution
 * feat: add missing hook script filter-flow-release-finish-version
