@@ -1,6 +1,7 @@
 # Changelog
 
 #### 2.2.0-SNAPSHOT
+* fix: Prevent hotfixes being merged to develop with nobackmerge flag. Thank You [adamrodger](https://github.com/adamrodger)
 * feat(feature): add release sub command. Thank You [codesurf42](https://github.com/codesurf42) for the initial pr
 * feat(init): add sign flag to create initial signed commit
 * feat(init): add support for "Support Git Environment Credentials" pull request #19 from filipekiss/feature/environment_credentials
