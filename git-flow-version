@@ -39,7 +39,7 @@
 #
 
 
-GITFLOW_VERSION=2.1.0
+GITFLOW_VERSION=2.2.0-SNAPSHOT-2
 
 initialize() {
 	# A function can not be empty. Comments count as empty.
