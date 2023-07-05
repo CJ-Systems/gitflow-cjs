@@ -59,6 +59,7 @@ git flow feature checkout
 git flow feature pull
 git flow feature delete
 git flow feature rename
+git flow feature release
 
 Manage your feature branches.
 
@@ -431,6 +432,14 @@ no-ff!                 Never fast-forward during the merge
 }
 
 cmd_release() {
+	OPTIONS_SPEC="\
+git flow feature release [-h]
+
+Create a release based on current feature
+--
+h,help!                Show this help
+"
+
 	# 1) pull dev from origin
 	# git_do checkout "$BRANCH"
 	# git_do (or somth exists alredy here?)
