@@ -8,9 +8,10 @@
 #    http://blog.avirtualhome.com/development-workflow-using-git/
 #
 # Feel free to contribute to this project at:
-#    http://github.com/petervanderdoes/gitflow
+#    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
 # Original Author:
@@ -348,23 +349,24 @@ showcommands!     Show git commands while executing them
 
 	# Sanity checks
 	require_clean_working_tree
-	require_branch_absent "$BRANCH"
-	git_do fetch -q "$ORIGIN"
-	require_branch "$ORIGIN/$BRANCH"
+	require_local_branch_absent "$BRANCH"
+
+	git_do fetch -q "$ORIGIN"  || die "Could not fetch branch '$BRANCH' from remote '$ORIGIN'."
+	git_remote_branch_exists "$ORIGIN/$BRANCH"
 
 	# Create tracking branch
-	git_do checkout -b "$BRANCH" "$ORIGIN/$BRANCH"
+	git_do checkout -b "$BRANCH" "$ORIGIN/$BRANCH" || die "Could not create branch '$BRANCH'."
 
 	echo
 	echo "Summary of actions:"
 	echo "- A new remote tracking branch '$BRANCH' was created"
-	echo "- You are now on branch '$BRANCH'"
+	echo "- You are now on branch '$(git_current_branch)'"
 	echo
 }
 
 cmd_finish() {
 	OPTIONS_SPEC="\
-git flow hotfix finish [-h] [-F] [-s] [-u] [-m | -f ] [-p] [-k] [-n] [-b] [-S] <version>
+git flow hotfix finish [-h] [-F] [-s] [-u] [-m | -f ] [-p] [-k] [-n] [-b | -c | -r] [-S] <version>
 
 Finish hotfix branch <version>
 --
@@ -382,8 +384,10 @@ k,[no]keep            Keep branch after performing finish
 D,[no]force_delete    Force delete hotfix branch after finish
 n,[no]notag           Don't tag this hotfix
 b,[no]nobackmerge     Don't back-merge master, or tag if applicable, in develop
+r,releaseBackmerge    Back-merge to release branch if exists
 S,[no]squash          Squash hotfix during merge
 T,tagname!            Use given tag name
+c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 "
 	local opts commit keepmsg remotebranchdeleted localbranchdeleted
 
@@ -400,25 +404,29 @@ T,tagname!            Use given tag name
 	DEFINE_boolean 'force_delete' false "force delete hotfix branch after finish" D
 	DEFINE_boolean 'notag' false "don't tag this hotfix" n
 	DEFINE_boolean 'nobackmerge' false "don't back-merge $MASTER_BRANCH, or tag if applicable, in $DEVELOP_BRANCH " b
+	DEFINE_boolean 'releasebackmerge' false "back-merge to release branch if exists" r
 	DEFINE_boolean 'squash' false "squash release during merge" S
 	DEFINE_boolean 'squash-info' false "add branch info during squash"
 	DEFINE_string  'tagname' "" "use the given tag name" T
+	DEFINE_boolean 'cherrypick' false "Cherry Pick to $DEVELOP_BRANCH instead of merge" c
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "hotfix.finish.fetch"          "fetch"
-	gitflow_override_flag_boolean   "hotfix.finish.sign"           "sign"
-	gitflow_override_flag_boolean   "hotfix.finish.push"           "push"
-	gitflow_override_flag_boolean   "hotfix.finish.keep"           "keep"
-	gitflow_override_flag_boolean   "hotfix.finish.keepremote"     "keepremote"
-	gitflow_override_flag_boolean   "hotfix.finish.keeplocal"      "keeplocal"
-	gitflow_override_flag_boolean   "hotfix.finish.force-delete"   "force_delete"
-	gitflow_override_flag_boolean   "hotfix.finish.notag"          "notag"
-	gitflow_override_flag_boolean   "hotfix.finish.nobackmerge"    "nobackmerge"
-	gitflow_override_flag_boolean   "hotfix.finish.squash"         "squash"
-	gitflow_override_flag_boolean   "hotfix.finish.squash-info"    "squash_info"
-	gitflow_override_flag_string    "hotfix.finish.signingkey"     "signingkey"
-	gitflow_override_flag_string    "hotfix.finish.message"        "message"
-	gitflow_override_flag_string    "hotfix.finish.messagefile"    "messagefile"
+	gitflow_override_flag_boolean   "hotfix.finish.fetch"             "fetch"
+	gitflow_override_flag_boolean   "hotfix.finish.sign"              "sign"
+	gitflow_override_flag_boolean   "hotfix.finish.push"              "push"
+	gitflow_override_flag_boolean   "hotfix.finish.keep"              "keep"
+	gitflow_override_flag_boolean   "hotfix.finish.keepremote"        "keepremote"
+	gitflow_override_flag_boolean   "hotfix.finish.keeplocal"         "keeplocal"
+	gitflow_override_flag_boolean   "hotfix.finish.force-delete"      "force_delete"
+	gitflow_override_flag_boolean   "hotfix.finish.notag"             "notag"
+	gitflow_override_flag_boolean   "hotfix.finish.nobackmerge"       "nobackmerge"
+	gitflow_override_flag_boolean   "hotfix.finish.releasebackmerge"  "releasebackmerge"
+	gitflow_override_flag_boolean   "hotfix.finish.squash"            "squash"
+	gitflow_override_flag_boolean   "hotfix.finish.squash-info"       "squash_info"
+  gitflow_override_flag_string    "hotfix.finish.signingkey"        "signingkey"
+	gitflow_override_flag_string    "hotfix.finish.message"           "message"
+	gitflow_override_flag_string    "hotfix.finish.messagefile"       "messagefile"
+	gitflow_override_flag_boolean   "hotfix.finish.cherrypick"     "cherrypick"
 
 	# Parse arguments
 	parse_args "$@"
@@ -447,6 +455,19 @@ T,tagname!            Use given tag name
 	if flag keepremote && flag keeplocal; then
 		FLAGS_keep=$FLAGS_TRUE
 	fi
+
+		# Check that not both no merge flags were given
+	if flag cherrypick && flag nobackmerge; then
+	    die "You can't use 'cherrypick' and 'nobackmerge' together."
+	fi
+
+	if flag cherrypick && flag releasebackmerge; then
+		die "You can't use 'cherrypick' and 'releasebackmerge' together."
+	fi
+
+	if flag nobackmerge && flag releasebackmerge; then
+		die "You can't use 'nobackmerge' && 'releasebackmerge' together."
+	fi 
 
 	# Sanity checks
 	require_branch "$BRANCH"
@@ -516,6 +537,42 @@ T,tagname!            Use given tag name
 
 	run_pre_hook "$VERSION_PREFIX$TAGNAME" "$ORIGIN" "$BRANCH"
 
+if flag cherrypick; then
+printf 'this is the cherrypick\n'
+read
+		git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
+
+		local old_IFS=$IFS  # save the field separator
+		IFS=$'\n'           # new field separator, the end of line
+		for git_line in $(git log --format="%H %s" --reverse $MASTER_BRANCH..$BRANCH | grep -vE "^[a-z0-9]* Merge branch '[^'].*?'$"); do
+		        local commit_hash=$(echo $git_line | cut -d" " -f1)
+		        if [[ $(git log $DEVELOP_BRANCH --grep "$commit_hash" | wc -l) -eq 0  ]]; then
+		                echo "\n${LIGHTGREEN}Cherry picking: $git_line${NOCOLOR}"
+		                git_do cherry-pick -x -s $commit_hash
+		                if [[ $? -ne 0  ]]; then
+		                        echo "
+===============================================================
+= Cherry pick has conflicts, steps to continue:
+= 1. Fix the conflicts
+= 2. Stage the fixed file: '${BLUE}git add <file names>${NOCOLOR}'
+= 3. Continue the cherry pick: '${BLUE}git cherry-pick --continue${NOCOLOR}'
+=    *** If fixing the conflict results in an empty commit,
+=        you will need to run this command: '${BLUE}git commit --allow-empty${NOCOLOR}'
+= 4. Switch back to the hotfix branch: '${BLUE}git checkout $BRANCH${NOCOLOR}'
+= 5. Rerun the finish command: '${BLUE}git flow hotfix finish${NOCOLOR}'
+= OR run '${BLUE}git cherry-pick --abort${NOCOLOR}' to abort the cherry pick
+===============================================================\n"
+		                        die "Cherry pick failed for commit: $commit_hash"
+		                fi
+		        else
+		                echo "\n${LIGHTGREEN}Commit has already been Cherry Picked: $git_line${NOCOLOR}"
+		        fi
+		done
+		IFS=$old_IFS  # restore default field separator
+
+		git_do checkout $BRANCH || die "Could not check out branch '$BRANCH'."
+	fi
+
 	# Try to merge into BASE.
 	# In case a previous attempt to finish this release branch has failed,
 	# but the merge into BASE was successful, we skip it now
@@ -551,43 +608,65 @@ T,tagname!            Use given tag name
 		fi
 	fi
 
-	if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ]; then
-		# By default we back-merge the $MASTER_BRANCH unless the user explicitly
-		# stated not to do a back-merge, in that case we use the $BRANCH.
-		if noflag nobackmerge; then
-			MERGE_BRANCH="$BASE_BRANCH"
-		else
-			MERGE_BRANCH="$BRANCH"
-		fi
-
-		# Try to merge into develop.
+	if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ] && noflag nobackmerge && noflag cherrypick; then
+		# Try to merge into develop unless the user specified the nobackmerge option.
 		# In case a previous attempt to finish this release branch has failed,
 		# but the merge into develop was successful, we skip it now
-		if ! git_is_branch_merged_into "$MERGE_BRANCH" "$DEVELOP_BRANCH"; then
-			git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
-
-			if noflag nobackmerge; then
-				# Accounting for 'git describe', if a release is tagged
-				# we use the tag commit instead of the branch.
-				if noflag notag; then
-					commit="$VERSION_PREFIX$TAGNAME"
-				else
-					commit="$BASE_BRANCH"
-				fi
+		if ! git_is_branch_merged_into "$BASE_BRANCH" "$DEVELOP_BRANCH"; then
+			# Accounting for 'git describe', if a release is tagged
+			# we use the tag commit instead of the branch.
+			if noflag notag; then
+				commit="$VERSION_PREFIX$TAGNAME"
 			else
-				commit="$BRANCH"
+				commit="$BASE_BRANCH"
 			fi
-
-			git_do merge --no-ff "$commit" || die "There were merge conflicts."
-			# TODO: What do we do now?
+			# merge master to develop
+			git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
+			git_do merge --no-ff "$commit" || die "There were merge conflicts." # TODO: What do we do now?
 		fi
 	fi
+
+	if flag releasebackmerge; then
+		_releasePrefix=$(git config --get gitflow.prefix.release)
+		release_branches=$(git_local_branches_prefixed "$_releasePrefix")
+		release_branch=
+		# Check if there is a release branch
+		if [ -n "$release_branches" ]; then
+			# Get the release branch name
+			release_branch=$(echo ${release_branches} | head -n1)
+			# Check if release branch exists on remote
+			if git_remote_branch_exists "$ORIGIN/$release_branch"; then
+				# Try to merge into release.
+				# In case a previous attempt to finish this release branch has failed,
+				# but the merge into release was successful, we skip it now
+				if ! git_is_branch_merged_into "$MERGE_BRANCH" "$release_branch"; then
+					git_do checkout "$release_branch" || die "Could not check out branch '$release_branch'."
+						# Accounting for 'git describe', if a release is tagged
+						# we use the tag commit instead of the branch.
+							if noflag notag; then
+								commit="$VERSION_PREFIX$TAGNAME"
+							else
+								commit="$BASE_BRANCH"
+							fi
+						else
+							commit="$BRANCH"
+						fi
+						git_do merge --no-ff "$commit" || die "There were merge conflicts."
+						# TODO: What do we do now?
+			else
+				echo "Remote release $release_branch not found"
+			fi
+		fi
+   	fi
 
 	run_post_hook "$VERSION_PREFIX$TAGNAME" "$ORIGIN" "$BRANCH"
 
 	if flag push; then
 		if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ]; then
 			git_do push "$ORIGIN" "$DEVELOP_BRANCH" || die "Could not push branch '$DEVELOP_BRANCH' to remote '$ORIGIN'."
+		fi
+		if [ -n "$release_branch" ]; then
+		  git_do push "$ORIGIN" "$release_branch" || dir "Could not push branch '$release_branch' to remote '$ORIGIN'."
 		fi
 		git_do push "$ORIGIN" "$BASE_BRANCH" || die "Could not push branch '$BASE_BRANCH' to remote '$ORIGIN'."
 		if noflag notag; then
@@ -633,11 +712,15 @@ T,tagname!            Use given tag name
 	if noflag notag; then
 		echo "- The hotfix was tagged '$VERSION_PREFIX$TAGNAME'"
 	fi
-	if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ]; then
+	if flag cherrypick; then
+		echo "- All commits from the hotfix branch have been cherry picked into '$DEVELOP_BRANCH'"
+	elif [ "$BASE_BRANCH" = "$MASTER_BRANCH" ]; then
 		[ "$commit" = "$BASE_BRANCH" ] && echo "- Master branch '$BASE_BRANCH' has been back-merged into '$DEVELOP_BRANCH'"
-		[ "$commit" = "$VERSION_PREFIX$TAGNAME" ] && echo "- Hotfix tag '$VERSION_PREFIX$TAGNAME' has been back-merged into '$DEVELOP_BRANCH'"
+		[ -n "$release_branch" ] && echo "- Hotfix tag '$VERSION_PREFIX$TAGNAME' has been back-merged into '$release_branch'"
+		[ "$commit" = "$VERSION_PREFIX$VERSION" ] && echo "- Hotfix tag '$VERSION_PREFIX$VERSION' has been back-merged into '$DEVELOP_BRANCH'"
 		[ "$commit" = "$BRANCH" ] && echo "- Hotfix branch '$BRANCH' has been merged into '$DEVELOP_BRANCH'"
 	fi
+
 	if noflag keep; then
 		if [ $localbranchdeleted -eq $FLAGS_TRUE ]; then
 			keepmsg="has been locally deleted"

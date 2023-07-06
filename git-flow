@@ -7,9 +7,10 @@
 #    http://blog.avirtualhome.com/development-workflow-using-git/
 #
 # Feel free to contribute to this project at:
-#    http://github.com/petervanderdoes/gitflow
+#    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
 # Original Author:
@@ -46,7 +47,7 @@ fi
 # git-flow file is a symbolic link
 case $(uname -s) in
 Linux)
-	export GITFLOW_DIR=$(dirname "$(readlink -e "$0")")
+	export GITFLOW_DIR=$(dirname "$(readlink -f "$0")")
 	;;
 FreeBSD|OpenBSD|NetBSD)
 	export FLAGS_GETOPT_CMD='/usr/local/bin/getopt'

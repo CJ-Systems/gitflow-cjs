@@ -8,9 +8,10 @@
 #    http://blog.avirtualhome.com/development-workflow-using-git/
 #
 # Feel free to contribute to this project at:
-#    http://github.com/petervanderdoes/gitflow
+#    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
 # Original Author:
@@ -58,7 +59,7 @@ parse_args() {
 # Default entry when no SUBACTION is given
 cmd_default() {
 	OPTIONS_SPEC="\
-git flow init [-h] [-d] [-f]
+git flow init [-h] [-d] [-f] [-g]
 
 Setup a git repository for git flow usage. Can also be used to start a git repository.
 --
@@ -66,6 +67,7 @@ h,help!             Show this help
 showcommands!       Show git commands while executing them
 d,[no]defaults      Use default branch naming conventions
 f,[no]force         Force setting of gitflow branches, even if already configured
+g,[no]sign			Sign initial commit when creating a repository
 
 p,feature!          Feature branches
 b,bugfix!           Bugfix branches
@@ -89,6 +91,7 @@ file=    use given config file
 	DEFINE_boolean 'local' false 'use repository config file'
 	DEFINE_boolean 'global' false 'use global config file'
 	DEFINE_boolean 'system' false 'use system config file'
+	DEFINE_boolean 'sign' false 'sign initial commit when creating a repository' g
 	DEFINE_string 'file' "" 'use given config file'
 	DEFINE_string 'feature' "" 'feature branches' p
 	DEFINE_string 'bugfix' "" 'bugfix branches' b
@@ -116,8 +119,8 @@ file=    use given config file
 	fi
 
 	if git_config_bool_exists "user.useconfigonly"; then
-		user_email=$(git config --get user.email)
-		user_name=$(git config --get user.name)
+		user_email=$(git config --get user.email || echo $GIT_AUTHOR_EMAIL)
+		user_name=$(git config --get user.name || echo $GIT_AUTHOR_NAME)
 		if [ -z "${user_email}" ] || [ -z "${user_name}" ]; then
 			die "Configuration useconfigonly is set but no name and/or email was set"
 		fi
@@ -259,8 +262,13 @@ file=    use given config file
 	local created_gitflow_branch=0
 	if ! git rev-parse --quiet --verify HEAD >/dev/null 2>&1; then
 		git_do symbolic-ref HEAD "refs/heads/$master_branch"
-		git_do commit --allow-empty --quiet -m "Initial commit"
-		created_gitflow_branch=1
+		if flag sign; then
+			git_do commit --allow-empty --gpg-sign --quiet -m "initial commit"
+			created_gitflow_branch=1
+		else
+			git_do commit --allow-empty --quiet -m "initial commit"
+			created_gitflow_branch=1
+		fi
 	fi
 
 	# Creation of master
@@ -388,7 +396,7 @@ file=    use given config file
 		[ "$answer" = "-" ] && prefix= || prefix=${answer:-$default_suggestion}
 		git_do config $gitflow_config_option gitflow.prefix.support "$prefix"
 	fi
-	
+
 	# Version tag prefix
 	if ! git config --get gitflow.prefix.versiontag >/dev/null 2>&1 || flag force; then
 	    if [ "$FLAGS_tag" != "" ]; then
