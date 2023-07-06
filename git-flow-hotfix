@@ -366,7 +366,7 @@ showcommands!     Show git commands while executing them
 
 cmd_finish() {
 	OPTIONS_SPEC="\
-git flow hotfix finish [-h] [-F] [-s] [-u] [-m | -f ] [-p] [-k] [-n] [-b | -c] [-S] <version>
+git flow hotfix finish [-h] [-F] [-s] [-u] [-m | -f ] [-p] [-k] [-n] [-b | -c | -r] [-S] <version>
 
 Finish hotfix branch <version>
 --
@@ -464,6 +464,10 @@ c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 	if flag cherrypick && flag releasebackmerge; then
 		die "You can't use 'cherrypick' and 'releasebackmerge' together."
 	fi
+
+	if flag nobackmerge && flag releasebackmerge; then
+		die "You can't use 'nobackmerge' && 'releasebackmerge' together."
+	fi 
 
 	# Sanity checks
 	require_branch "$BRANCH"
