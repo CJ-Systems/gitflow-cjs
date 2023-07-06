@@ -1,15 +1,15 @@
 # Changelog
 
-#### 2.2.0-SNAPSHOT
-* feat: add option to hotfix finish to allow for backmerge to release branch. Thank You [Bankers88](https://github.com/Bankers88)
-* fix: Prevent hotfixes being merged to develop with nobackmerge flag. Thank You [adamrodger](https://github.com/adamrodger)
-* feat(feature): add release sub command. Thank You [codesurf42](https://github.com/codesurf42) for the initial pr
-* feat(init): add sign flag to create initial signed commit
-* feat(init): add support for "Support Git Environment Credentials" pull request #19 from filipekiss/feature/environment_credentials
-* docs: update repository url in source files
-* docs: update copyright information in source files
-* fix: wording for help text in git flow log pull request #15 from Shea690901/hotfix/git-flow-log_help-message
-* refactor(git-flow): add support for busybox-readlink request #12 from KAction/readlink-busybox
+#### 2.2.0
+* feat(init): add option to sign initial commit (#59)
+* feat(git-flow): add support for environment credentials (#19)
+* feat(git-flow): add support for busybox(#12)
+* feat(feature): add feature release command (#64)
+* feat(hotfix): add cherrypick option to hotfix finish (#73) 
+* feat(hotfix): add  backmerge option to release branch (#71)
+* fix(hotfix): git flow hotfix finish -b still back-merges to develop (#66)
+* fix(hotfix): git flow hotfix track fails due to branch name check (#68)
+* fix: git flow log help message (#15)
 
 #### 2.1.0
 * feat: add create command to release allowing for a single step release prodution

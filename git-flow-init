@@ -59,7 +59,7 @@ parse_args() {
 # Default entry when no SUBACTION is given
 cmd_default() {
 	OPTIONS_SPEC="\
-git flow init [-h] [-d] [-f]
+git flow init [-h] [-d] [-f] [-g]
 
 Setup a git repository for git flow usage. Can also be used to start a git repository.
 --
@@ -396,7 +396,7 @@ file=    use given config file
 		[ "$answer" = "-" ] && prefix= || prefix=${answer:-$default_suggestion}
 		git_do config $gitflow_config_option gitflow.prefix.support "$prefix"
 	fi
-	
+
 	# Version tag prefix
 	if ! git config --get gitflow.prefix.versiontag >/dev/null 2>&1 || flag force; then
 	    if [ "$FLAGS_tag" != "" ]; then
