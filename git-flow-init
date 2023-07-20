@@ -446,7 +446,7 @@ file=    use given config file
         else
             printf "\n"
         fi
-        if [ "${answer:-$default_suggestion}" = "Y" ]; then
+        if [ "${answer:-$default_suggestion}" = "Y" ] || [ "${answer:-$default_suggestion}" = "y" ]; then
             ln -s "$hooks_dir/pre-commit" -t "$LOCAL_GIT_HOOKS_DIR" --backup
         fi
     fi
