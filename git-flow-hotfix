@@ -538,8 +538,6 @@ c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 	run_pre_hook "$VERSION_PREFIX$TAGNAME" "$ORIGIN" "$BRANCH"
 
 if flag cherrypick; then
-printf 'this is the cherrypick\n'
-read
 		git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
 
 		local old_IFS=$IFS  # save the field separator
@@ -547,25 +545,25 @@ read
 		for git_line in $(git log --format="%H %s" --reverse $MASTER_BRANCH..$BRANCH | grep -vE "^[a-z0-9]* Merge branch '[^'].*?'$"); do
 		        local commit_hash=$(echo $git_line | cut -d" " -f1)
 		        if [[ $(git log $DEVELOP_BRANCH --grep "$commit_hash" | wc -l) -eq 0  ]]; then
-		                echo "\n${LIGHTGREEN}Cherry picking: $git_line${NOCOLOR}"
+		                echo "\nCherry picking: $git_line${NOCOLOR}"
 		                git_do cherry-pick -x -s $commit_hash
 		                if [[ $? -ne 0  ]]; then
 		                        echo "
 ===============================================================
 = Cherry pick has conflicts, steps to continue:
 = 1. Fix the conflicts
-= 2. Stage the fixed file: '${BLUE}git add <file names>${NOCOLOR}'
-= 3. Continue the cherry pick: '${BLUE}git cherry-pick --continue${NOCOLOR}'
+= 2. Stage the fixed file: 'git add <file names>'
+= 3. Continue the cherry pick: 'git cherry-pick --continue'
 =    *** If fixing the conflict results in an empty commit,
-=        you will need to run this command: '${BLUE}git commit --allow-empty${NOCOLOR}'
-= 4. Switch back to the hotfix branch: '${BLUE}git checkout $BRANCH${NOCOLOR}'
-= 5. Rerun the finish command: '${BLUE}git flow hotfix finish${NOCOLOR}'
-= OR run '${BLUE}git cherry-pick --abort${NOCOLOR}' to abort the cherry pick
+=        you will need to run this command: 'git commit --allow-empty'
+= 4. Switch back to the hotfix branch: 'git checkout $BRANCH'
+= 5. Rerun the finish command: 'git flow hotfix finish'
+= OR run 'git cherry-pick --abort' to abort the cherry pick
 ===============================================================\n"
 		                        die "Cherry pick failed for commit: $commit_hash"
 		                fi
 		        else
-		                echo "\n${LIGHTGREEN}Commit has already been Cherry Picked: $git_line${NOCOLOR}"
+		                echo "\nCommit has already been Cherry Picked: $git_line"
 		        fi
 		done
 		IFS=$old_IFS  # restore default field separator
