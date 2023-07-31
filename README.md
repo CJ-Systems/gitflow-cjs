@@ -72,7 +72,7 @@ using the complete version number.
 
 ## Contributing
 
-If you are resubmiting an open pull request see below. If submiting a new pull request addressing an already open issue with gitflow-avh please link the relevant issue in the description. For any new issues please see below
+If submiting a new pull request addressing an already open issue with gitflow-avh please link the relevant issue in the description. For any new issues please see below
 
 ### Quick Start for new issues
 
@@ -85,7 +85,6 @@ If you are resubmiting an open pull request see below. If submiting a new pull r
 * When ready to submit a pull request.
 
 ### How to submit a pull request
-When resubmitting an open pull request from [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh) the base repository will need to be changed from petervanderdoes/gitflow-avh to CJ-Systems/gitflow-cjs.
 
 For any new PRs releated to gitflow-cjs you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
 

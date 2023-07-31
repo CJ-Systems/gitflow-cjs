@@ -1,5 +1,8 @@
 # Changelog
 
+#### 2.2.1
+* fix issue #82 remove color support for cherry-pick hotfix thank you [jrebmann](https://github.com/jrebmann) for reporting this
+
 #### 2.2.0
 * feat(init): add option to sign initial commit (#59)
 * feat(git-flow): add support for environment credentials (#19)

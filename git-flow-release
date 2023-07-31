@@ -632,6 +632,12 @@ nodevelopmerge!  Don't back-merge develop branch
 	eval set -- "${FLAGS_ARGV}"
 	
 	base=${2:-$DEVELOP_BRANCH}
+
+	# Fool git flow into thinking we have a create command this allows for consistency with hook naming
+	# NOTE: this may cause a issue if we ever decide to add an actual create command to git flow
+	SUBCOMMAND="create"
+	SUBACTION="start"
+
 # Run filter on the version
 	VERSION=$(run_filter_hook create-start-version $VERSION)
 	if [ $? -eq 127 ]; then
@@ -670,13 +676,6 @@ nodevelopmerge!  Don't back-merge develop branch
 	echo "Summary of actions:"
 	echo "- A new branch '$BRANCH' was created, based on '$base'"
 	echo "- You are now on branch '$(git_current_branch)'"
-	echo
-	echo "Follow-up actions:"
-	echo "- Bump the version number now!"
-	echo "- Start committing last-minute fixes in preparing your release"
-	echo "- When done, run:"
-	echo
-	echo "     git flow release finish '$VERSION'"
 	echo
 	# Run filter on the version
 	VERSION=$(run_filter_hook create-finish-version $VERSION)
@@ -731,11 +730,9 @@ nodevelopmerge!  Don't back-merge develop branch
 	fi
 
 	if [ "$BASE_BRANCH" = "$DEVELOP_BRANCH" ]; then
-		SUBCOMMAND="create"
 		SUBACTION="finish"
 		_finish_from_develop
 	else
-		SUBCOMMAND="create"
 		SUBACTION="finish"
 		_finish_base
 	fi
