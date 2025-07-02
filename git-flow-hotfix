@@ -429,7 +429,7 @@ nodevelopmerge!  Don't back-merge develop branch
 	gitflow_override_flag_string    "hotfix.finish.message"           "message"
 	gitflow_override_flag_string    "hotfix.finish.messagefile"       "messagefile"
 	gitflow_override_flag_boolean   "hotfix.finish.cherrypick"     "cherrypick"
-	gitflow_override_flag_boolean   "release.finish.nodevelopmerge" "nodevelopmerge"
+	gitflow_override_flag_boolean   "hotfix.finish.nodevelopmerge" "nodevelopmerge"
 
 	# Parse arguments
 	parse_args "$@"
