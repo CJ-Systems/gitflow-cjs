@@ -388,6 +388,7 @@ r,releaseBackmerge    Back-merge to release branch if exists
 S,[no]squash          Squash hotfix during merge
 T,tagname!            Use given tag name
 c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
+nodevelopmerge!  Don't back-merge develop branch
 "
 	local opts commit keepmsg remotebranchdeleted localbranchdeleted
 
@@ -409,6 +410,7 @@ c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 	DEFINE_boolean 'squash-info' false "add branch info during squash"
 	DEFINE_string  'tagname' "" "use the given tag name" T
 	DEFINE_boolean 'cherrypick' false "Cherry Pick to $DEVELOP_BRANCH instead of merge" c
+	DEFINE_boolean 'nodevelopmerge' false "don't merge $BRANCH into $DEVELOP_BRANCH "
 
 	# Override defaults with values from config
 	gitflow_override_flag_boolean   "hotfix.finish.fetch"             "fetch"
@@ -427,6 +429,7 @@ c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 	gitflow_override_flag_string    "hotfix.finish.message"           "message"
 	gitflow_override_flag_string    "hotfix.finish.messagefile"       "messagefile"
 	gitflow_override_flag_boolean   "hotfix.finish.cherrypick"     "cherrypick"
+	gitflow_override_flag_boolean   "release.finish.nodevelopmerge" "nodevelopmerge"
 
 	# Parse arguments
 	parse_args "$@"
@@ -606,21 +609,43 @@ if flag cherrypick; then
 		fi
 	fi
 
-	if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ] && noflag nobackmerge && noflag cherrypick; then
-		# Try to merge into develop unless the user specified the nobackmerge option.
-		# In case a previous attempt to finish this release branch has failed,
-		# but the merge into develop was successful, we skip it now
-		if ! git_is_branch_merged_into "$BASE_BRANCH" "$DEVELOP_BRANCH"; then
-			# Accounting for 'git describe', if a release is tagged
-			# we use the tag commit instead of the branch.
-			if noflag notag; then
-				commit="$VERSION_PREFIX$TAGNAME"
-			else
-				commit="$BASE_BRANCH"
+	# By default we backmerge the $MASTER_BRANCH unless the user explicitly
+	# stated not to do a back merge, in that case we use the $BRANCH.
+	if noflag nobackmerge; then
+		merge_branch="$BASE_BRANCH"
+	else
+		merge_branch="$BRANCH"
+	fi
+
+	# Try to merge into develop unless 'nodevelopmerge' has been specified.
+	if noflag nodevelopmerge; then
+		if [ "$BASE_BRANCH" = "$MASTER_BRANCH" ] && noflag cherrypick; then
+			# In case a previous attempt to finish this release branch has failed,
+			# but the merge into develop was successful, we skip it now
+			if ! git_is_branch_merged_into "$merge_branch" "$DEVELOP_BRANCH"; then
+				git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
+
+				if noflag nobackmerge; then
+					# Accounting for 'git describe', if a release is tagged
+					# we use the tag commit instead of the branch.
+					if noflag notag; then
+						commit="$VERSION_PREFIX$TAGNAME"
+					else
+						commit="$BASE_BRANCH"
+					fi
+					# merge master to develop
+					git_do merge --no-ff "$commit" || die "There were merge conflicts." # TODO: What do we do now?
+				else
+					commit="$BRANCH"
+					if noflag squash; then
+						git_do merge --no-ff "$commit" || die "There were merge conflicts." # TODO: What do we do now?
+					else
+						git_do merge --squash "$commit" || die "There were merge conflicts." # TODO: What do we do now?
+						flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$DEVELOP_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
+						git_do commit $opts
+					fi
+				fi
 			fi
-			# merge master to develop
-			git_do checkout "$DEVELOP_BRANCH" || die "Could not check out branch '$DEVELOP_BRANCH'."
-			git_do merge --no-ff "$commit" || die "There were merge conflicts." # TODO: What do we do now?
 		fi
 	fi
 

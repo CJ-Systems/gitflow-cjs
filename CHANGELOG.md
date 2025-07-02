@@ -1,5 +1,8 @@
 # Changelog
 
+#### Unreleased
+* fix issue #90 - hotfix branch is merged in develop when using -b (no back merge master/tag)
+
 #### 2.2.1
 * fix issue #82 remove color support for cherry-pick hotfix thank you [jrebmann](https://github.com/jrebmann) for reporting this
 
