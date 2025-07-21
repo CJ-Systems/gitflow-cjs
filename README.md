@@ -234,3 +234,15 @@ in another way, however, consider donating through PayPal:
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=GU25NCHMVMT9U)
 
+
+## Running tests
+
+This project uses [ShellSpec](https://shellspec.info/) for BDD-level scenarios and [Bats](https://bats-core.readthedocs.io/) for unit tests.
+
+To execute the test suites run:
+
+```sh
+shellspec
+bats test
+```
+
