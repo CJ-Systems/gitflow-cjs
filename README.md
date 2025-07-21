@@ -225,6 +225,17 @@ the command.
 The files should be placed in .git/hooks  
 In the directory hooks you can find examples of all the hooks available.
 
+## Testing
+
+Unit level tests are written with [Bats](https://github.com/bats-core/bats-core) and behavioural tests are written with [ShellSpec](https://github.com/shellspec/shellspec). Both tools must be installed locally and available on your `PATH`.
+
+Run all tests with:
+
+```shell
+bats test/bats
+shellspec
+```
+
 
 ## Showing your appreciation
 
