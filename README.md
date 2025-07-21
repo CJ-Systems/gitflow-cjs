@@ -88,6 +88,15 @@ If submiting a new pull request addressing an already open issue with gitflow-av
 
 For any new PRs releated to gitflow-cjs you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
 
+## Running tests
+
+To run the basic test suite execute:
+
+```shell
+bash tests/version.sh
+```
+
+
 ## License terms
 
 git-flow is published under the FreeBSD License, see the
