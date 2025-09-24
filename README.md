@@ -188,7 +188,7 @@ This will create a local feature `feature/<name>` that tracks the same remote br
 
 When one developer (depending on your work flow) finishes working on the feature he or she can issue `git flow feature finish <name>` and this will automatically delete the remote branch. All other developers shall then run:
 ```shell
-    git flow feature delete <name>
+git flow feature delete <name>
 ```
 
 to get rid of the local feature that tracks a remote branch that no more exist.
