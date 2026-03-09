@@ -1,0 +1,58 @@
+# ShellSpec Configuration
+# See: https://shellspec.info/docs/configuration.html
+
+# Filename pattern for spec files
+shell_patterns="spec/*_spec.sh"
+
+# ShellSpec directory
+shellspec_dir="spec"
+
+# Enable timing information
+timing="true"
+
+# Enable color output
+color="auto"
+
+# Set random seed for consistent test order
+# seed="123456"
+
+# Show pending tests
+show_pending="true"
+
+# Stop on first failure (optional)
+# fail_fast="true"
+
+# Coverage options (requires kcov)
+# coverage="true"
+# coverage_tool="kcov"
+
+# Exclude patterns from coverage
+# coverage_exclude_pattern="spec/*.sh:tmp/*"
+
+# Reporter options
+# reporter="json"
+
+# Output file for results
+# output_file="test-results.txt"
+
+# Formatter options
+# format="progress"
+# format="tap"
+# format="junit"
+# format="json"
+
+# Execute hooks
+# before_all_examples=""
+# after_all_examples=""
+# before_each_examples=""
+# after_each_examples=""
+
+# Working directory
+# work_dir="/tmp/shellspec-work"
+
+# Verbose mode
+# verbose="true"
+
+# Error handling
+# warn_only="false"
+
