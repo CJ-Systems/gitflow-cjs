@@ -1,15 +1,45 @@
-# git-flow (CJS Edition)
+# git-flow (LBEM Edition)
 
 A collection of Git extensions to provide high-level repository operations
 for Vincent Driessen's [branching model](http://nvie.com/git-model "original
-blog post"). This fork adds functionality not added to the original branch.
+blog post").
 
-## Why another git-flow fork
+## About LBEM Edition
+
+This is a fork of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs) that adds workflow enhancements inspired by [git-town](https://www.git-town.com/). LBEM Edition stays close to the CJS version to easily pull upstream bugfixes while adding the following features:
+
+### Additional Commands
+
+- **`git flow feature sync`** / **`git flow bugfix sync`** - Sync your branch with the base branch (like `git-town sync`). Handles uncommitted changes automatically, supports rebase or merge strategy.
+- **`git flow feature propose`** / **`git flow bugfix propose`** - Create a pull request for your branch using `gh` CLI (falls back to opening browser URL).
+- **`git flow config export`** - Export gitflow settings to a `.gitflow` file for team sharing.
+
+### Configuration Enhancements
+
+- **`.gitflow` file support** - Store gitflow configuration in a shareable file. When a developer clones a repo with a `.gitflow` file and runs `git flow init`, settings are automatically imported.
+- **Finish mode** - Configure how `finish` behaves: `classic` (traditional merge), `propose` (create PR), or `ask` (prompt each time). Set via `git flow config set finishmode <mode>`.
+- **Sync strategy** - Choose `rebase` (default) or `merge` for sync operations. Set via `git flow config set syncstrategy <strategy>`.
+
+### macOS Compatibility
+
+LBEM Edition includes fixes for macOS compatibility with BSD getopt. Install GNU getopt via Homebrew and set:
+```bash
+export FLAGS_GETOPT_CMD="/usr/local/opt/gnu-getopt/bin/getopt"
+```
+
+## Upstream Projects
+
+This project is based on and grateful to:
+
+- **[gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)** - The CJS Edition that continues maintenance after AVH was archived
+- **[gitflow-avh](https://github.com/petervanderdoes/gitflow-avh)** - The AVH Edition that extended the original gitflow
+- **[nvie/gitflow](https://github.com/nvie/gitflow)** - The original gitflow implementation by Vincent Driessen
+
+## Why another git-flow fork?
+
 The last commit to [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh)
 was on May 23, 2019 and has been archived on Jun 19, 2023. Since 2019 there have
-been a number of issues opened that have not be resolved. This fork will address
-those outstanding issues and open PR's along with continuing to maintain the
-git-flow branching model.
+been a number of issues opened that have not be resolved. [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs) continues maintenance but we needed additional workflow features for our team.
 
 ## Getting started
 
@@ -30,14 +60,14 @@ A quick cheatsheet was made by Daniel Kummer:
 
 ## Installing git-flow
 
-See the Wiki for up-to-date [Installation Instructions](https://github.com/CJ-Systems/gitflow-cjs/wiki/Installation).
+See the Wiki for up-to-date [Installation Instructions](https://github.com/LBEM-CH/gitflow-lbem/wiki/Installation).
 
 
 ## Integration with your shell
 
 For those who use the [Bash](https://www.gnu.org/software/bash/) or [ZSH](https://www.zsh.org/)
-shell, you can use my [fork of git-flow-completion](https://github.com/petervanderdoes/git-flow-completion)
-which includes several additions for git-flow (AVH Edition), or you can use the
+shell, you can use our [fork of git-flow-completion](https://github.com/LBEM-CH/gitflow-lbem-completion)
+which includes several additions for git-flow (CJS & AVH Edition), or you can use the
 original [git-flow-completion](https://github.com/bobthecow/git-flow-completion)
 project by [bobthecow](https://github.com/bobthecow). Both offer tab-completion
 for git-flow subcommands and branch names with my fork including tab-completion
@@ -46,12 +76,13 @@ for the commands not found in the original git-flow.
 
 ## FAQ
 
-* See the [FAQ](https://github.com/CJ-Systems/gitflow-cjs/wiki/FAQ) section
+* See the [FAQ](https://github.com/LBEM-CH/gitflow-lbem/wiki/FAQ) section
 of the project Wiki.
 * Version Numbering Scheme.  
 Starting with version 1.0, the project uses the following scheme:
-\<MAJOR\>.\<MINOR\>.\<REVISION\>\
+\<MAJOR\>.\<MINOR\>.\<REVISION\>-lbem.\<LBEM_REVISION\>
 * CJS is the acronym of "CJ Systems"
+* LBEM is the acronym of "Laboratory of Biological Electron Microscopy"
 
 ## Please help out
 
@@ -72,21 +103,32 @@ using the complete version number.
 
 ## Contributing
 
-If submiting a new pull request addressing an already open issue with gitflow-avh please link the relevant issue in the description. For any new issues please see below
+### Where to contribute?
 
-### Quick Start for new issues
+- **LBEM Edition features** (sync, propose, config export, .gitflow file support, finish mode): Please contribute to [gitflow-lbem](https://github.com/LBEM-CH/gitflow-lbem)
+- **General gitflow bugs and features**: Please contribute to the upstream [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs) repository. We regularly pull in upstream changes.
 
-* Please fork and clone a local copy of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs).
-* Create a seperate issue branch based off develop.
-* Commit commit you fix to the local branch.
-* Please update your local copy with the latest devlop branch of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)
-* Rebase develop onto your local branch.
-* Push your fix to your fork.
-* When ready to submit a pull request.
+### Quick Start for LBEM Edition contributions
+
+* Fork and clone [gitflow-lbem](https://github.com/LBEM-CH/gitflow-lbem)
+* Create a feature branch based off develop: `git flow feature start my-feature`
+* Commit your changes to the local branch
+* Push your feature branch: `git flow feature publish`
+* Create a pull request against the `develop` branch
+
+### Quick Start for general gitflow issues
+
+* Please fork and clone a local copy of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)
+* Create a separate issue branch based off develop
+* Commit your fix to the local branch
+* Please update your local copy with the latest develop branch of [gitflow-cjs](https://github.com/CJ-Systems/gitflow-cjs)
+* Rebase develop onto your local branch
+* Push your fix to your fork
+* Submit a pull request
 
 ### How to submit a pull request
 
-For any new PRs releated to gitflow-cjs you can use on of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the releated issue.
+For any new PRs related to gitflow-cjs you can use one of the keywords from [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to automatically close the related issue.
 
 ## License terms
 
@@ -216,6 +258,53 @@ and eventually finish it:
 ```shell
 git flow hotfix finish
 ```
+
+### Sync feature/bugfix branches (LBEM Edition)
+
+To synchronize your feature branch with the latest changes from the develop branch, use:
+```shell
+git flow feature sync [<name>]
+```
+
+This command (inspired by [git-town sync](https://www.git-town.com/commands/sync.html)):
+- Stashes any uncommitted changes
+- Fetches from the remote
+- Rebases (or merges, depending on config) your branch onto the latest develop
+- Restores your stashed changes
+
+You can configure the sync strategy:
+```shell
+git flow config set syncstrategy rebase   # default
+git flow config set syncstrategy merge
+```
+
+### Create pull requests (LBEM Edition)
+
+Instead of merging locally with `finish`, you can create a pull request:
+```shell
+git flow feature propose [<name>]
+```
+
+This will:
+- Push your branch to the remote (if not already pushed)
+- Create a pull request using `gh` CLI (if available)
+- Fall back to opening the PR URL in your browser
+
+You can also configure `finish` to always create a PR instead of merging:
+```shell
+git flow config set finishmode propose   # always create PR
+git flow config set finishmode classic   # traditional merge (default)
+git flow config set finishmode ask       # prompt each time
+```
+
+### Export/Import configuration (LBEM Edition)
+
+To share gitflow configuration with your team, export settings to a `.gitflow` file:
+```shell
+git flow config export
+```
+
+This creates a `.gitflow` file in your repository root that can be committed. When another developer clones the repo and runs `git flow init`, the settings are automatically imported.
 
 
 ### Using Hooks and Filters

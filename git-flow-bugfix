@@ -11,6 +11,7 @@
 #    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2025 LBEM. All rights reserved.
 # Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
@@ -59,6 +60,9 @@ git flow bugfix checkout
 git flow bugfix pull
 git flow bugfix delete
 git flow bugfix rename
+git flow bugfix sync
+git flow bugfix propose
+git flow bugfix pr
 
 Manage your bugfix branches.
 
@@ -261,14 +265,14 @@ no-ff!                 Never fast-forward during the merge
 	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
 	DEFINE_boolean 'rebase' false "rebase before merging" r
 	DEFINE_boolean 'preserve-merges' false 'try to recreate merges while rebasing' p
-	DEFINE_boolean 'push' false "push to $ORIGIN after performing finish"
+	DEFINE_boolean 'push' false "push to $ORIGIN after performing finish" P
 	DEFINE_boolean 'keep' false "keep branch after performing finish" k
-	DEFINE_boolean 'keepremote' false "keep the remote branch"
-	DEFINE_boolean 'keeplocal' false "keep the local branch"
+	DEFINE_boolean 'keepremote' false "keep the remote branch" 1
+	DEFINE_boolean 'keeplocal' false "keep the local branch" 2
 	DEFINE_boolean 'force_delete' false "force delete bugfix branch after finish" D
 	DEFINE_boolean 'squash' false "squash bugfix during merge" S
-	DEFINE_boolean 'squash-info' false "add branch info during squash"
-	DEFINE_boolean 'no-ff!' false "Don't fast-forward ever during merge "
+	DEFINE_boolean 'squash-info' false "add branch info during squash" 3
+	DEFINE_boolean 'no-ff!' false "Don't fast-forward ever during merge " 4
 
 	# Override defaults with values from config
 	gitflow_override_flag_boolean   "bugfix.finish.fetch"             "fetch"
@@ -291,6 +295,38 @@ no-ff!                 Never fast-forward during the merge
 		gitflow_use_current_branch_name
 	fi
 
+	# LBEM Edition: Check finish mode (classic/propose/ask)
+	local finish_mode
+	finish_mode=$(gitflow_get_finish_mode "bugfix")
+
+	case "$finish_mode" in
+		propose)
+			echo "Finish mode is 'propose'. Creating pull request instead of merging..."
+			cmd_propose "$@"
+			return $?
+			;;
+		ask)
+			printf "Finish mode: [c]lassic merge, [p]ropose PR, [a]bort? "
+			read answer
+			case "$answer" in
+				p|P)
+					cmd_propose "$@"
+					return $?
+					;;
+				a|A)
+					echo "Aborted."
+					exit 0
+					;;
+				c|C|*)
+					# Continue with classic finish
+					;;
+			esac
+			;;
+		classic|*)
+			# Continue with classic finish
+			;;
+	esac
+
 	# Keeping both branches implies the --keep flag to be true.
 	if flag keepremote && flag keeplocal; then
 		FLAGS_keep=$FLAGS_TRUE
@@ -302,6 +338,23 @@ no-ff!                 Never fast-forward during the merge
 	BASE_BRANCH=$(gitflow_config_get_base_branch $BRANCH)
 	BASE_BRANCH=${BASE_BRANCH:-$DEVELOP_BRANCH}
 	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exists locally or is not a branch. Can't finish the bugfix branch '$BRANCH'."
+
+	# LBEM Edition: Check if branch was already merged on GitHub/GitLab
+	# This handles the case where user did 'propose', merged on remote, and now runs 'finish'
+	if flag fetch; then
+		git_fetch_branch "$ORIGIN" "$BASE_BRANCH"
+	fi
+	if ! git_remote_branch_exists "$ORIGIN/$BRANCH"; then
+		# Remote branch doesn't exist - check if it was merged
+		if git_is_branch_merged_into "$BRANCH" "$BASE_BRANCH"; then
+			echo "Branch '$BRANCH' appears to have been merged and deleted on remote."
+			echo "Cleaning up local branch..."
+			run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+			gitflow_config_remove_base_branch "$BRANCH"
+			helper_finish_cleanup
+			exit 0
+		fi
+	fi
 
 	# Detect if we're restoring from a merge conflict
 	if [ -f "$DOT_GIT_DIR/.gitflow/MERGE_BASE" ]; then
@@ -841,4 +894,238 @@ h,help!          Show this help
 showcommands!    Show git commands while executing them
 "
 	gitflow_rename_branch "$@"
+}
+
+#
+# LBEM Edition: Sync command - synchronize bugfix branch with base branch
+#
+cmd_sync() {
+	OPTIONS_SPEC="\
+git flow bugfix sync [-h] [-p] [--prune] [<name|nameprefix>]
+
+Synchronize bugfix branch <name> with its base branch (like git-town sync).
+This will:
+  1. Stash any uncommitted changes
+  2. Fetch updates from origin (with prune)
+  3. Update the base branch
+  4. Rebase or merge the bugfix branch on the updated base (configurable)
+  5. Push the bugfix branch to origin (if -p flag or config)
+  6. Optionally prune local branches that were deleted on remote
+  7. Restore stashed changes
+
+When <name> is omitted the current branch is used, but only if it's a bugfix branch.
+--
+h,help!          Show this help
+showcommands!    Show git commands while executing them
+p,[no]push       Push to origin after sync
+[no]prune        Prune local branches deleted on remote (default: prompt)
+"
+	local did_stash sync_strategy prune_behavior
+
+	# Define flags
+	DEFINE_boolean 'push' false "push to $ORIGIN after sync" p
+	DEFINE_boolean 'prune' true "prune local branches deleted on remote"
+
+	# Override defaults with values from config
+	gitflow_override_flag_boolean "bugfix.sync.push" "push"
+
+	# Parse arguments
+	parse_args "$@"
+
+	# Get prune behavior from config
+	prune_behavior=$(git config --get gitflow.sync.prune 2>/dev/null)
+	[ -z "$prune_behavior" ] && prune_behavior="prompt"
+
+	# Use current branch if no name is given
+	if [ "$NAME" = "" ]; then
+		gitflow_use_current_branch_name
+	fi
+
+	# Sanity checks
+	require_branch "$BRANCH"
+
+	BASE_BRANCH=$(gitflow_config_get_base_branch $BRANCH)
+	BASE_BRANCH=${BASE_BRANCH:-$DEVELOP_BRANCH}
+
+	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exist locally. Can't sync the bugfix branch '$BRANCH'."
+
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE_BRANCH"
+
+	# Step 1: Stash uncommitted changes
+	echo "Syncing bugfix branch '$BRANCH' with '$BASE_BRANCH'..."
+	gitflow_stash_save
+	did_stash=$?
+
+	# Step 2: Fetch from origin (with prune)
+	echo "Fetching from '$ORIGIN'..."
+	git_do fetch -q --prune "$ORIGIN" || die "Could not fetch from '$ORIGIN'."
+
+	# Step 3: Update base branch if it has a remote counterpart
+	if git_remote_branch_exists "$ORIGIN/$BASE_BRANCH"; then
+		echo "Updating base branch '$BASE_BRANCH'..."
+		git_do checkout -q "$BASE_BRANCH" || die "Could not check out '$BASE_BRANCH'."
+		git_do merge --ff-only "$ORIGIN/$BASE_BRANCH" 2>/dev/null || {
+			warn "Base branch '$BASE_BRANCH' has diverged from '$ORIGIN/$BASE_BRANCH'."
+			warn "Please resolve this manually before syncing."
+			gitflow_stash_pop $did_stash
+			exit 1
+		}
+	fi
+
+	# Step 4: Get back to bugfix branch and sync with base
+	git_do checkout -q "$BRANCH" || die "Could not check out '$BRANCH'."
+
+	# If remote bugfix branch exists, pull it first
+	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
+		echo "Pulling updates from '$ORIGIN/$BRANCH'..."
+		git_do pull --rebase -q "$ORIGIN" "$BRANCH" 2>/dev/null || {
+			warn "Could not pull from '$ORIGIN/$BRANCH'. You may need to resolve conflicts."
+			gitflow_stash_pop $did_stash
+			exit 1
+		}
+	fi
+
+	# Rebase or merge based on strategy
+	sync_strategy=$(gitflow_get_sync_strategy "bugfix")
+	echo "Syncing with base branch using $sync_strategy strategy..."
+
+	if [ "$sync_strategy" = "rebase" ]; then
+		git_do rebase "$BASE_BRANCH" || {
+			warn "Rebase failed. Please resolve conflicts and run 'git rebase --continue'."
+			warn "After resolving, run 'git flow bugfix sync' again."
+			gitflow_stash_pop $did_stash
+			exit 1
+		}
+	else
+		git_do merge --no-edit "$BASE_BRANCH" || {
+			warn "Merge failed. Please resolve conflicts and commit."
+			warn "After resolving, run 'git flow bugfix sync' again."
+			gitflow_stash_pop $did_stash
+			exit 1
+		}
+	fi
+
+	# Step 5: Push if requested
+	if flag push; then
+		echo "Pushing '$BRANCH' to '$ORIGIN'..."
+		if [ "$sync_strategy" = "rebase" ]; then
+			git_do push --force-with-lease "$ORIGIN" "$BRANCH" || warn "Could not push to '$ORIGIN'. You may need to push manually."
+		else
+			git_do push "$ORIGIN" "$BRANCH" || warn "Could not push to '$ORIGIN'. You may need to push manually."
+		fi
+	fi
+
+	# Step 6: Prune stale local branches
+	if flag prune; then
+		gitflow_prune_branches "$prune_behavior"
+	fi
+
+	# Step 7: Restore stashed changes
+	gitflow_stash_pop $did_stash
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE_BRANCH"
+
+	echo
+	echo "Summary of actions:"
+	echo "- Bugfix branch '$BRANCH' was synced with '$BASE_BRANCH'"
+	if flag push; then
+		echo "- Bugfix branch '$BRANCH' was pushed to '$ORIGIN'"
+	fi
+	if flag prune; then
+		echo "- Stale remote-tracking branches were pruned"
+	fi
+	echo "- You are now on branch '$(git_current_branch)'"
+	echo
+}
+
+#
+# LBEM Edition: Propose command - create a pull/merge request
+#
+cmd_propose() {
+	OPTIONS_SPEC="\
+git flow bugfix propose [-h] [-d] [-a <user>] [-r <user>] [-l <labels>] [<name|nameprefix>]
+
+Create a pull request (or merge request) for bugfix branch <name>.
+This will:
+  1. Push the bugfix branch to origin (if not already pushed)
+  2. Create a PR using gh/glab CLI (if available) or open browser
+
+When <name> is omitted the current branch is used, but only if it's a bugfix branch.
+--
+h,help!          Show this help
+showcommands!    Show git commands while executing them
+d,[no]draft      Create as draft PR
+a,assignee=      Assign PR to user (use @me for self)
+r,reviewer=      Request review from user
+l,label=         Add labels (comma-separated)
+"
+	local _draft _assignee _reviewer _labels
+
+	# Define flags
+	DEFINE_boolean 'draft' false 'create as draft PR' d
+	DEFINE_string 'assignee' '' 'assign PR to user' a
+	DEFINE_string 'reviewer' '' 'request review from user' r
+	DEFINE_string 'label' '' 'add labels (comma-separated)' l
+
+	# Override defaults with values from config
+	gitflow_override_flag_boolean "bugfix.propose.draft" "draft"
+	gitflow_override_flag_string "bugfix.propose.assignee" "assignee"
+	gitflow_override_flag_string "bugfix.propose.reviewer" "reviewer"
+	gitflow_override_flag_string "bugfix.propose.labels" "label"
+
+	# Parse arguments
+	parse_args "$@"
+
+	# Use current branch if no name is given
+	if [ "$NAME" = "" ]; then
+		gitflow_use_current_branch_name
+	fi
+
+	# Sanity checks
+	require_clean_working_tree
+	require_branch "$BRANCH"
+
+	BASE_BRANCH=$(gitflow_config_get_base_branch $BRANCH)
+	BASE_BRANCH=${BASE_BRANCH:-$DEVELOP_BRANCH}
+
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE_BRANCH"
+
+	# Push branch to origin if not already there
+	if ! git_remote_branch_exists "$ORIGIN/$BRANCH"; then
+		echo "Publishing '$BRANCH' to '$ORIGIN'..."
+		git_do push -u "$ORIGIN" "$BRANCH:$BRANCH" || die "Could not push '$BRANCH' to '$ORIGIN'."
+	else
+		# Make sure local branch is up to date with remote
+		echo "Pushing any local changes to '$ORIGIN/$BRANCH'..."
+		git_do push "$ORIGIN" "$BRANCH" || die "Could not push '$BRANCH' to '$ORIGIN'."
+	fi
+
+	# Convert flag values
+	if flag draft; then
+		_draft="true"
+	else
+		_draft="false"
+	fi
+	_assignee="$FLAGS_assignee"
+	_reviewer="$FLAGS_reviewer"
+	_labels="$FLAGS_label"
+
+	# Create PR with options
+	gitflow_create_pr "$BRANCH" "$BASE_BRANCH" "bugfix" "$_draft" "$_assignee" "$_reviewer" "$_labels"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE_BRANCH"
+
+	echo
+	echo "Summary of actions:"
+	echo "- Bugfix branch '$BRANCH' was pushed to '$ORIGIN'"
+	echo "- A pull request was created (or browser opened) targeting '$BASE_BRANCH'"
+	echo "- You are now on branch '$(git_current_branch)'"
+	echo
+}
+
+#
+# LBEM Edition: PR alias for propose
+#
+cmd_pr() {
+	cmd_propose "$@"
 }

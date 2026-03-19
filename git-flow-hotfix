@@ -11,6 +11,7 @@
 #    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2025 LBEM. All rights reserved.
 # Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
@@ -53,6 +54,7 @@ git flow hotfix [list]
 git flow hotfix start
 git flow hotfix finish
 git flow hotfix publish
+git flow hotfix sync
 git flow hotfix delete
 git flow hotfix rebase
 git flow hotfix track
@@ -389,8 +391,9 @@ S,[no]squash          Squash hotfix during merge
 T,tagname!            Use given tag name
 c,cherrypick          Cherry Pick to $DEVELOP_BRANCH instead of merge
 nodevelopmerge!  Don't back-merge develop branch
+9,[no]create-release  Create a GitHub/GitLab release for the tag
 "
-	local opts commit keepmsg remotebranchdeleted localbranchdeleted
+	local opts commit keepmsg remotebranchdeleted localbranchdeleted release_created
 
 	# Define flags
 	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
@@ -411,6 +414,7 @@ nodevelopmerge!  Don't back-merge develop branch
 	DEFINE_string  'tagname' "" "use the given tag name" T
 	DEFINE_boolean 'cherrypick' false "Cherry Pick to $DEVELOP_BRANCH instead of merge" c
 	DEFINE_boolean 'nodevelopmerge' false "don't merge $BRANCH into $DEVELOP_BRANCH "
+	DEFINE_boolean 'create-release' false "create a GitHub/GitLab release for the tag" 9
 
 	# Override defaults with values from config
 	gitflow_override_flag_boolean   "hotfix.finish.fetch"             "fetch"
@@ -430,6 +434,7 @@ nodevelopmerge!  Don't back-merge develop branch
 	gitflow_override_flag_string    "hotfix.finish.messagefile"       "messagefile"
 	gitflow_override_flag_boolean   "hotfix.finish.cherrypick"     "cherrypick"
 	gitflow_override_flag_boolean   "hotfix.finish.nodevelopmerge" "nodevelopmerge"
+	gitflow_override_flag_boolean   "hotfix.finish.create-release" "create-release"
 
 	# Parse arguments
 	parse_args "$@"
@@ -448,6 +453,7 @@ nodevelopmerge!  Don't back-merge develop branch
 
 	remotebranchdeleted=$FLAGS_FALSE
 	localbranchdeleted=$FLAGS_FALSE
+	release_created=$FLAGS_FALSE
 
 	# Handle flags that imply other flags
 	if [ "$FLAGS_signingkey" != "" ]; then
@@ -697,6 +703,12 @@ if flag cherrypick; then
 		fi
 	fi
 
+	# Create GitHub/GitLab release if requested
+	if noflag notag && flag create-release; then
+		gitflow_create_release "$VERSION_PREFIX$TAGNAME" "$VERSION_PREFIX$TAGNAME"
+		release_created=$FLAGS_TRUE
+	fi
+
 	# Delete branch
 	if noflag keep; then
 
@@ -769,6 +781,9 @@ if flag cherrypick; then
 			echo "- '$BASE_BRANCH' and tags have been pushed to '$ORIGIN'"
 		fi
 	fi
+	if [ $release_created -eq $FLAGS_TRUE ]; then
+		echo "- A GitHub/GitLab release was created for '$VERSION_PREFIX$TAGNAME'"
+	fi
 	echo "- You are now on branch '$(git_current_branch)'"
 	echo
 
@@ -835,6 +850,86 @@ r,[no]remote          Delete remote branch
 	echo "Summary of actions:"
 	echo "- Hotfix branch '$BRANCH' has been deleted."
 	flag remote && echo "- Hotfix branch '$BRANCH' in '$ORIGIN' has been deleted."
+	echo "- You are now on branch '$(git_current_branch)'"
+	echo
+}
+
+#
+# LBEM Edition: Sync command - synchronize hotfix branch with remote
+#
+cmd_sync() {
+	OPTIONS_SPEC="\
+git flow hotfix sync [-h] [-p] [<name|nameprefix>]
+
+Synchronize hotfix branch <name> with its remote counterpart.
+This will:
+  1. Stash any uncommitted changes
+  2. Pull updates from the remote hotfix branch
+  3. Push the hotfix branch to origin (if -p flag or config)
+  4. Restore stashed changes
+
+When <name> is omitted the current branch is used, but only if it's a hotfix branch.
+--
+h,help!          Show this help
+showcommands!    Show git commands while executing them
+p,[no]push       Push to origin after sync
+"
+	local did_stash
+
+	# Define flags
+	DEFINE_boolean 'push' false "push to $ORIGIN after sync" p
+
+	# Override defaults with values from config
+	gitflow_override_flag_boolean "hotfix.sync.push" "push"
+
+	# Parse arguments
+	parse_args "$@"
+
+	# Use current branch if no name is given
+	if [ "$VERSION" = "" ]; then
+		gitflow_use_current_branch_version
+	fi
+
+	# Sanity checks
+	require_branch "$BRANCH"
+
+	run_pre_hook "$VERSION" "$ORIGIN" "$BRANCH"
+
+	# Step 1: Stash uncommitted changes
+	echo "Syncing hotfix branch '$BRANCH'..."
+	gitflow_stash_save
+	did_stash=$?
+
+	# Step 2: Fetch and pull from remote hotfix branch
+	echo "Fetching from '$ORIGIN'..."
+	git_do fetch -q "$ORIGIN" || die "Could not fetch from '$ORIGIN'."
+
+	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
+		echo "Pulling updates from '$ORIGIN/$BRANCH'..."
+		git_do pull --rebase -q "$ORIGIN" "$BRANCH" 2>/dev/null || {
+			warn "Could not pull from '$ORIGIN/$BRANCH'. You may need to resolve conflicts."
+			gitflow_stash_pop $did_stash
+			exit 1
+		}
+	fi
+
+	# Step 3: Push if requested
+	if flag push; then
+		echo "Pushing '$BRANCH' to '$ORIGIN'..."
+		git_do push "$ORIGIN" "$BRANCH" || warn "Could not push to '$ORIGIN'. You may need to push manually."
+	fi
+
+	# Step 4: Restore stashed changes
+	gitflow_stash_pop $did_stash
+
+	run_post_hook "$VERSION" "$ORIGIN" "$BRANCH"
+
+	echo
+	echo "Summary of actions:"
+	echo "- Hotfix branch '$BRANCH' was synced with '$ORIGIN/$BRANCH'"
+	if flag push; then
+		echo "- Hotfix branch '$BRANCH' was pushed to '$ORIGIN'"
+	fi
 	echo "- You are now on branch '$(git_current_branch)'"
 	echo
 }

@@ -64,7 +64,7 @@ git flow init [-h] [-d] [-f] [-g]
 Setup a git repository for git flow usage. Can also be used to start a git repository.
 --
 h,help!             Show this help
-showcommands!       Show git commands while executing them
+v,showcommands!     Show git commands while executing them
 d,[no]defaults      Use default branch naming conventions
 f,[no]force         Force setting of gitflow branches, even if already configured
 g,[no]sign			Sign initial commit when creating a repository
@@ -73,14 +73,14 @@ p,feature!          Feature branches
 b,bugfix!           Bugfix branches
 r,release!          Release branches
 x,hotfix!           Hotfix branches
-s,support!          Support branches
+u,support!          Support branches
 t,tag!              Version tag prefix
 
 Use config file location
-local!   use repository config file
-global!  use global config file
-system!  use system config file
-file=    use given config file
+l,local!   use repository config file
+o,global!  use global config file
+y,system!  use system config file
+c:,file=    use given config file
 "
 	local gitflow_config_option should_check_existence branchcount guess
 	local master_branch develop_branch default_suggestion answer prefix
@@ -88,16 +88,16 @@ file=    use given config file
 	# Define flags
 	DEFINE_boolean 'force' false 'force setting of gitflow branches, even if already configured' f
 	DEFINE_boolean 'defaults' false 'use default branch naming conventions' d
-	DEFINE_boolean 'local' false 'use repository config file'
-	DEFINE_boolean 'global' false 'use global config file'
-	DEFINE_boolean 'system' false 'use system config file'
+	DEFINE_boolean 'local' false 'use repository config file' l
+	DEFINE_boolean 'global' false 'use global config file' o
+	DEFINE_boolean 'system' false 'use system config file' y
 	DEFINE_boolean 'sign' false 'sign initial commit when creating a repository' g
-	DEFINE_string 'file' "" 'use given config file'
+	DEFINE_string 'file' "" 'use given config file' c
 	DEFINE_string 'feature' "" 'feature branches' p
 	DEFINE_string 'bugfix' "" 'bugfix branches' b
 	DEFINE_string 'release' "" 'release branches' r
 	DEFINE_string 'hotfix' "" 'hotfix branches' x
-	DEFINE_string 'support' "" 'support branches' s
+	DEFINE_string 'support' "" 'support branches' u
 	DEFINE_string 'tag' "" 'version tag prefix' t
 
 	# Override defaults with values from config
@@ -429,7 +429,7 @@ file=    use given config file
 		git_do config $gitflow_config_option gitflow.path.hooks "$hooks_dir"
 	fi
 
-	# Automate pre-commit hook install if it exists on git-flow hooks directory
+    # Automate pre-commit hook install if it exists on git-flow hooks directory
     hooks_dir=$(git config --get gitflow.path.hooks)
     hooks_dir=${hooks_dir%%/}
     if [ -f "$hooks_dir/pre-commit" ]; then
@@ -450,6 +450,98 @@ file=    use given config file
             ln -s "$hooks_dir/pre-commit" -t "$LOCAL_GIT_HOOKS_DIR" --backup
         fi
     fi
+
+	# LBEM Edition settings
+	if flag force || \
+		! git config --get gitflow.feature.finish.mode >/dev/null 2>&1; then
+		echo
+		echo "LBEM Edition settings:"
+	fi
+
+	# Feature finish mode (merge or rebase)
+	if ! git config --get gitflow.feature.finish.mode >/dev/null 2>&1 || flag force; then
+		default_suggestion=$(git config --get gitflow.feature.finish.mode || echo "merge")
+		printf "Feature finish mode (merge/rebase)? [$default_suggestion] "
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		answer=${answer:-$default_suggestion}
+		if [ "$answer" = "merge" ] || [ "$answer" = "rebase" ]; then
+			git_do config $gitflow_config_option gitflow.feature.finish.mode "$answer"
+		else
+			warn "Invalid mode '$answer'. Using default 'merge'."
+			git_do config $gitflow_config_option gitflow.feature.finish.mode "merge"
+		fi
+	fi
+
+	# Default draft PR setting
+	if ! git config --get gitflow.propose.draft >/dev/null 2>&1 || flag force; then
+		default_suggestion=$(git config --bool --get gitflow.propose.draft 2>/dev/null)
+		[ -z "$default_suggestion" ] && default_suggestion="false"
+		printf "Create draft PRs by default? (true/false) [$default_suggestion] "
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		answer=${answer:-$default_suggestion}
+		if [ "$answer" = "true" ] || [ "$answer" = "false" ]; then
+			git_do config $gitflow_config_option gitflow.propose.draft "$answer"
+		fi
+	fi
+
+	# Auto-label PRs with branch type
+	if ! git config --get gitflow.propose.autolabel >/dev/null 2>&1 || flag force; then
+		default_suggestion=$(git config --bool --get gitflow.propose.autolabel 2>/dev/null)
+		[ -z "$default_suggestion" ] && default_suggestion="false"
+		printf "Auto-label PRs with branch type (feature/bugfix)? (true/false) [$default_suggestion] "
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		answer=${answer:-$default_suggestion}
+		if [ "$answer" = "true" ] || [ "$answer" = "false" ]; then
+			git_do config $gitflow_config_option gitflow.propose.autolabel "$answer"
+		fi
+	fi
+
+	# Create GitHub/GitLab releases on release finish
+	if ! git config --get gitflow.release.finish.create-release >/dev/null 2>&1 || flag force; then
+		default_suggestion=$(git config --bool --get gitflow.release.finish.create-release 2>/dev/null)
+		[ -z "$default_suggestion" ] && default_suggestion="false"
+		printf "Create GitHub/GitLab releases on release finish? (true/false) [$default_suggestion] "
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		answer=${answer:-$default_suggestion}
+		if [ "$answer" = "true" ] || [ "$answer" = "false" ]; then
+			git_do config $gitflow_config_option gitflow.release.finish.create-release "$answer"
+		fi
+	fi
+
+	# Sync prune behavior
+	if ! git config --get gitflow.sync.prune >/dev/null 2>&1 || flag force; then
+		default_suggestion=$(git config --get gitflow.sync.prune 2>/dev/null)
+		[ -z "$default_suggestion" ] && default_suggestion="prompt"
+		printf "Sync prune behavior (prompt/delete/keep)? [$default_suggestion] "
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		answer=${answer:-$default_suggestion}
+		if [ "$answer" = "prompt" ] || [ "$answer" = "delete" ] || [ "$answer" = "keep" ]; then
+			git_do config $gitflow_config_option gitflow.sync.prune "$answer"
+		else
+			warn "Invalid prune behavior '$answer'. Using default 'prompt'."
+			git_do config $gitflow_config_option gitflow.sync.prune "prompt"
+		fi
+	fi
 
 	# TODO: what to do with origin?
 }

@@ -11,6 +11,7 @@
 #    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2025 LBEM. All rights reserved.
 # Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
@@ -39,7 +40,7 @@
 #
 
 
-GITFLOW_VERSION=2.2.1
+GITFLOW_VERSION=2.2.1-lbem.3
 
 initialize() {
 	# A function can not be empty. Comments count as empty.
@@ -59,7 +60,7 @@ For more specific help type the command followed by --help
 }
 
 cmd_default() {
-	echo "$GITFLOW_VERSION (CJS Edition)"
+	echo "$GITFLOW_VERSION (LBEM Edition, based on CJS/AVH)"
 }
 
 cmd_help() {

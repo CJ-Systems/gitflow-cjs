@@ -1,0 +1,25 @@
+name: Trigger Homebrew Formula Update
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest completion version
+        id: completion_version
+        run: |
+          COMP_VERSION=$(curl -s https://api.github.com/repos/LBEM-CH/gitflow-lbem-completion/tags | jq -r '.[0].name')
+          echo "version=${COMP_VERSION}" >> $GITHUB_OUTPUT
+          echo "Latest completion version: ${COMP_VERSION}"
+
+      - name: Trigger Homebrew formula update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.HOMEBREW_DISPATCH_TOKEN }}
+          repository: LBEM-CH/homebrew-gitflow-lbem
+          event-type: main-release
+          client-payload: '{"version": "${{ github.ref_name }}", "completion_version": "${{ steps.completion_version.outputs.version }}"}'

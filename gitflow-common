@@ -11,6 +11,7 @@
 #    http://github.com/CJ-Systems/gitflow-cjs
 #
 # Authors:
+# Copyright 2025 LBEM. All rights reserved.
 # Copyright 2003 CJ Systems. All rights reserved.
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
 #
@@ -319,6 +320,9 @@ gitflow_load_settings() {
 		done;
 		mv "$GITFLOW_CONFIG" "$GITFLOW_CONFIG".backup 2>/dev/null
 	fi
+
+	# LBEM Edition: Load settings from .gitflow file in repo root
+	gitflow_load_dotgitflow
 }
 
 #
@@ -496,6 +500,652 @@ gitflow_override_flag_string() {
 	esac
 	unset _variable
 	return ${FLAGS_TRUE}
+}
+
+#
+# LBEM Edition: Additional functionality for sync, propose, and finish mode
+#
+
+# gitflow_check_finish_mode()
+#
+# Validate finish mode config value
+#
+# Param $1: string Value to validate
+# Return: 0=valid, 1=invalid
+#
+gitflow_check_finish_mode() {
+	local _value
+	_value="${1}"
+	case "${_value}" in
+		classic|propose|ask)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+# gitflow_get_finish_mode()
+#
+# Get the finish mode for a subcommand (feature, bugfix, etc.)
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string "classic"|"propose"|"ask" (defaults to "classic")
+#
+gitflow_get_finish_mode() {
+	local _mode _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_mode=$(git config --get gitflow.${_subcommand}.finish.mode 2>/dev/null)
+	[ -z "$_mode" ] && _mode=$(git config --get gitflow.finish.mode 2>/dev/null)
+	[ -z "$_mode" ] && _mode="classic"
+
+	echo "$_mode"
+}
+
+# gitflow_check_sync_strategy()
+#
+# Validate sync strategy config value
+#
+# Param $1: string Value to validate
+# Return: 0=valid, 1=invalid
+#
+gitflow_check_sync_strategy() {
+	local _value
+	_value="${1}"
+	case "${_value}" in
+		rebase|merge)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+# gitflow_get_sync_strategy()
+#
+# Get the sync strategy for a subcommand (feature, bugfix, etc.)
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string "rebase"|"merge" (defaults to "rebase")
+#
+gitflow_get_sync_strategy() {
+	local _strategy _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_strategy=$(git config --get gitflow.${_subcommand}.sync.strategy 2>/dev/null)
+	[ -z "$_strategy" ] && _strategy=$(git config --get gitflow.sync.strategy 2>/dev/null)
+	[ -z "$_strategy" ] && _strategy="rebase"
+
+	echo "$_strategy"
+}
+
+# gitflow_get_propose_open()
+#
+# Check if browser should auto-open after propose
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string "true"|"false" (defaults to "true")
+#
+gitflow_get_propose_open() {
+	local _open _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_open=$(git config --bool --get gitflow.${_subcommand}.propose.open 2>/dev/null)
+	[ -z "$_open" ] && _open=$(git config --bool --get gitflow.propose.open 2>/dev/null)
+	[ -z "$_open" ] && _open="true"
+
+	echo "$_open"
+}
+
+# gitflow_get_propose_draft()
+#
+# Check if PRs should be created as drafts by default
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string "true"|"false" (defaults to "false")
+#
+gitflow_get_propose_draft() {
+	local _draft _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_draft=$(git config --bool --get gitflow.${_subcommand}.propose.draft 2>/dev/null)
+	[ -z "$_draft" ] && _draft=$(git config --bool --get gitflow.propose.draft 2>/dev/null)
+	[ -z "$_draft" ] && _draft="false"
+
+	echo "$_draft"
+}
+
+# gitflow_get_propose_assignee()
+#
+# Get default assignee for PRs
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string Assignee (empty string if not set)
+#
+gitflow_get_propose_assignee() {
+	local _assignee _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_assignee=$(git config --get gitflow.${_subcommand}.propose.assignee 2>/dev/null)
+	[ -z "$_assignee" ] && _assignee=$(git config --get gitflow.propose.assignee 2>/dev/null)
+
+	echo "$_assignee"
+}
+
+# gitflow_get_propose_reviewer()
+#
+# Get default reviewer for PRs
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string Reviewer (empty string if not set)
+#
+gitflow_get_propose_reviewer() {
+	local _reviewer _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_reviewer=$(git config --get gitflow.${_subcommand}.propose.reviewer 2>/dev/null)
+	[ -z "$_reviewer" ] && _reviewer=$(git config --get gitflow.propose.reviewer 2>/dev/null)
+
+	echo "$_reviewer"
+}
+
+# gitflow_get_propose_labels()
+#
+# Get default labels for PRs
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string Labels (comma-separated, empty string if not set)
+#
+gitflow_get_propose_labels() {
+	local _labels _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_labels=$(git config --get gitflow.${_subcommand}.propose.labels 2>/dev/null)
+	[ -z "$_labels" ] && _labels=$(git config --get gitflow.propose.labels 2>/dev/null)
+
+	echo "$_labels"
+}
+
+# gitflow_get_propose_autolabel()
+#
+# Check if branch type should be auto-added as label
+#
+# Param $1: string Subcommand name (e.g., "feature", "bugfix")
+# Return: string "true"|"false" (defaults to "false")
+#
+gitflow_get_propose_autolabel() {
+	local _autolabel _subcommand
+	_subcommand="${1}"
+
+	# Try subcommand-specific first, then global
+	_autolabel=$(git config --bool --get gitflow.${_subcommand}.propose.autolabel 2>/dev/null)
+	[ -z "$_autolabel" ] && _autolabel=$(git config --bool --get gitflow.propose.autolabel 2>/dev/null)
+	[ -z "$_autolabel" ] && _autolabel="false"
+
+	echo "$_autolabel"
+}
+
+# gitflow_detect_forge()
+#
+# Detect the forge type (github, gitlab, bitbucket) from remote URL
+#
+# Return: string "github"|"gitlab"|"bitbucket"|"unknown"
+#
+gitflow_detect_forge() {
+	local _remote_url
+
+	_remote_url=$(git config --get remote.${ORIGIN}.url 2>/dev/null)
+
+	case "$_remote_url" in
+		*github.com*|*github.*)
+			echo "github"
+			;;
+		*gitlab.com*|*gitlab.*)
+			echo "gitlab"
+			;;
+		*bitbucket.org*|*bitbucket.*)
+			echo "bitbucket"
+			;;
+		*)
+			echo "unknown"
+			;;
+	esac
+}
+
+# gitflow_get_repo_url()
+#
+# Get the web URL of the repository
+#
+# Return: string The HTTPS URL of the repository
+#
+gitflow_get_repo_url() {
+	local _remote_url _web_url
+
+	_remote_url=$(git config --get remote.${ORIGIN}.url 2>/dev/null)
+
+	# Convert SSH URL to HTTPS URL
+	# git@github.com:user/repo.git -> https://github.com/user/repo
+	# https://github.com/user/repo.git -> https://github.com/user/repo
+	_web_url=$(echo "$_remote_url" | sed -e 's/^git@/https:\/\//' -e 's/\.git$//' -e 's/:/\//' -e 's/https\/\//https:\/\//')
+
+	echo "$_web_url"
+}
+
+# gitflow_open_url()
+#
+# Open a URL in the default browser (cross-platform)
+#
+# Param $1: string URL to open
+#
+gitflow_open_url() {
+	local _url
+	_url="$1"
+
+	case "$(uname -s)" in
+		Darwin)
+			open "$_url"
+			;;
+		Linux)
+			if command -v xdg-open >/dev/null 2>&1; then
+				xdg-open "$_url"
+			elif command -v gnome-open >/dev/null 2>&1; then
+				gnome-open "$_url"
+			else
+				warn "Could not detect the web browser to use."
+			fi
+			;;
+		*MINGW*|*CYGWIN*|*MSYS*)
+			start "$_url"
+			;;
+		*)
+			warn "Could not detect the web browser to use."
+			;;
+	esac
+}
+
+# gitflow_has_cli_tool()
+#
+# Check if a CLI tool (gh, glab) is available and authenticated
+#
+# Param $1: string Tool name ("gh", "glab")
+# Return: 0=available, 1=not available
+#
+gitflow_has_cli_tool() {
+	local _tool
+	_tool="$1"
+
+	case "$_tool" in
+		gh)
+			command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1
+			;;
+		glab)
+			command -v glab >/dev/null 2>&1 && glab auth status >/dev/null 2>&1
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+# gitflow_stash_save()
+#
+# Stash any uncommitted changes (like git-town sync)
+#
+# Return: 0=stashed, 1=nothing to stash
+#
+gitflow_stash_save() {
+	local _status
+
+	# Check if there are uncommitted changes
+	git_is_clean_working_tree
+	_status=$?
+
+	if [ $_status -ne 0 ]; then
+		git_do stash push -m "gitflow: auto-stash before sync" || die "Could not stash changes"
+		return 0
+	fi
+	return 1
+}
+
+# gitflow_stash_pop()
+#
+# Restore stashed changes if we stashed earlier
+#
+# Param $1: boolean Whether we stashed (0=yes, 1=no)
+#
+gitflow_stash_pop() {
+	local _did_stash
+	_did_stash="$1"
+
+	if [ "$_did_stash" -eq 0 ]; then
+		git_do stash pop || warn "Could not restore stashed changes. Run 'git stash pop' manually."
+	fi
+}
+
+# gitflow_prune_branches()
+#
+# Prune stale remote-tracking branches and optionally delete local branches
+# that were tracking branches deleted on remote
+#
+# Param $1: string Prune behavior ("prompt"|"delete"|"keep")
+#
+gitflow_prune_branches() {
+	local _prune_behavior _stale_branches _branch _tracking _remote_branch _answer _skip_all
+	local _has_unmerged _base_branch
+
+	_prune_behavior="${1:-prompt}"
+	_skip_all="false"
+
+	# First, prune stale remote-tracking branches
+	git_do fetch --prune "$ORIGIN" 2>/dev/null
+
+	# Find local branches that were tracking deleted remote branches
+	_stale_branches=""
+	for _branch in $(git_local_branches); do
+		# Get the remote tracking branch
+		_tracking=$(git config --get "branch.${_branch}.remote" 2>/dev/null)
+		_remote_branch=$(git config --get "branch.${_branch}.merge" 2>/dev/null)
+
+		# Skip if no tracking info
+		[ -z "$_tracking" ] || [ -z "$_remote_branch" ] && continue
+
+		# Convert refs/heads/X to X
+		_remote_branch="${_remote_branch#refs/heads/}"
+
+		# Check if remote branch no longer exists
+		if [ "$_tracking" = "$ORIGIN" ] && ! git_remote_branch_exists "$ORIGIN/$_remote_branch"; then
+			_stale_branches="$_stale_branches $_branch"
+		fi
+	done
+
+	# If no stale branches, we're done
+	[ -z "$_stale_branches" ] && return 0
+
+	# Handle stale branches based on behavior
+	for _branch in $_stale_branches; do
+		# Skip protected branches
+		if [ "$_branch" = "$MASTER_BRANCH" ] || [ "$_branch" = "$DEVELOP_BRANCH" ]; then
+			continue
+		fi
+
+		# Skip if we're on this branch
+		if [ "$_branch" = "$(git_current_branch)" ]; then
+			warn "Cannot delete branch '$_branch' - currently checked out."
+			continue
+		fi
+
+		# Check if branch has unmerged local commits
+		_base_branch=$(gitflow_config_get_base_branch "$_branch")
+		_base_branch=${_base_branch:-$DEVELOP_BRANCH}
+		_has_unmerged="false"
+		
+		# Branch has unmerged commits if it's not merged into base
+		if ! git_is_branch_merged_into "$_branch" "$_base_branch"; then
+			_has_unmerged="true"
+		fi
+
+		case "$_prune_behavior" in
+			delete)
+				if [ "$_has_unmerged" = "true" ]; then
+					warn "Branch '$_branch' has unmerged local commits - keeping it safe."
+				else
+					echo "Deleting stale local branch '$_branch' (already merged)..."
+					git_do branch -d "$_branch" 2>/dev/null || warn "Could not delete '$_branch'."
+				fi
+				;;
+			keep)
+				echo "Keeping stale local branch '$_branch' (remote was deleted)"
+				;;
+			prompt|*)
+				if [ "$_skip_all" = "true" ]; then
+					echo "Keeping stale local branch '$_branch'"
+					continue
+				fi
+				if [ "$_has_unmerged" = "true" ]; then
+					printf "Branch '%s' was deleted on remote but has LOCAL UNMERGED COMMITS. [d]elete anyway, [k]eep, [s]kip all? " "$_branch"
+				else
+					printf "Branch '%s' was deleted on remote (already merged). [d]elete, [k]eep, [s]kip all? " "$_branch"
+				fi
+				read _answer
+				case "$_answer" in
+					d|D|delete)
+						if [ "$_has_unmerged" = "true" ]; then
+							git_do branch -D "$_branch" 2>/dev/null && echo "Force deleted local branch '$_branch'"
+						else
+							git_do branch -d "$_branch" 2>/dev/null && echo "Deleted local branch '$_branch'"
+						fi
+						;;
+					s|S|skip)
+						_skip_all="true"
+						echo "Skipping all remaining stale branches"
+						;;
+					*)
+						echo "Keeping stale local branch '$_branch'"
+						;;
+				esac
+				;;
+		esac
+	done
+}
+
+# gitflow_load_dotgitflow()
+#
+# Load settings from .gitflow file in repo root if it exists
+# This is called from gitflow_load_settings
+#
+gitflow_load_dotgitflow() {
+	local _dotgitflow_file _config_lines _config_line _key _value
+
+	_dotgitflow_file="$GIT_CURRENT_REPO_DIR/.gitflow"
+
+	if [ -f "$_dotgitflow_file" ]; then
+		_config_lines=$(git config --list --file="$_dotgitflow_file" 2>/dev/null)
+		for _config_line in ${_config_lines}; do
+			_key=${_config_line%%=*}
+			_value=${_config_line#*=}
+			# Only set if not already set in local config (local config takes precedence)
+			if ! git config --local --get "gitflow.${_key}" >/dev/null 2>&1; then
+				git_do config --local "gitflow.${_key}" "${_value}" 2>/dev/null
+			fi
+		done
+	fi
+}
+
+# gitflow_create_pr()
+#
+# Create a pull request using CLI tool or fallback to URL
+#
+# Param $1: string Branch name
+# Param $2: string Base branch
+# Param $3: string Subcommand (feature, bugfix) for config
+# Param $4: string Draft flag ("true"|"false", optional)
+# Param $5: string Assignee (optional, supports @me)
+# Param $6: string Reviewer (optional)
+# Param $7: string Labels (optional, comma-separated)
+#
+gitflow_create_pr() {
+	local _branch _base _subcommand _forge _repo_url _pr_url _open_browser _title
+	local _draft _assignee _reviewer _labels _autolabel _gh_opts _glab_opts
+
+	_branch="$1"
+	_base="$2"
+	_subcommand="$3"
+	
+	# Get options from parameters or config (parameters take precedence)
+	_draft="${4:-$(gitflow_get_propose_draft "$_subcommand")}"
+	_assignee="${5:-$(gitflow_get_propose_assignee "$_subcommand")}"
+	_reviewer="${6:-$(gitflow_get_propose_reviewer "$_subcommand")}"
+	_labels="${7:-$(gitflow_get_propose_labels "$_subcommand")}"
+	_autolabel=$(gitflow_get_propose_autolabel "$_subcommand")
+	
+	_forge=$(gitflow_detect_forge)
+	_repo_url=$(gitflow_get_repo_url)
+	_open_browser=$(gitflow_get_propose_open "$_subcommand")
+	_title="${_branch#*/}"  # Remove prefix for title
+	
+	# Add branch type label if autolabel is enabled
+	if [ "$_autolabel" = "true" ]; then
+		if [ -n "$_labels" ]; then
+			_labels="${_labels},${_subcommand}"
+		else
+			_labels="$_subcommand"
+		fi
+	fi
+
+	case "$_forge" in
+		github)
+			if gitflow_has_cli_tool "gh"; then
+				echo "Creating pull request using GitHub CLI..."
+				
+				# Build gh options
+				_gh_opts="--base \"$_base\" --head \"$_branch\" --title \"$_title\" --fill"
+				
+				if [ "$_draft" = "true" ]; then
+					_gh_opts="$_gh_opts --draft"
+				fi
+				
+				if [ -n "$_assignee" ]; then
+					_gh_opts="$_gh_opts --assignee \"$_assignee\""
+				fi
+				
+				if [ -n "$_reviewer" ]; then
+					_gh_opts="$_gh_opts --reviewer \"$_reviewer\""
+				fi
+				
+				if [ -n "$_labels" ]; then
+					_gh_opts="$_gh_opts --label \"$_labels\""
+				fi
+				
+				eval gh pr create $_gh_opts
+				
+				if [ "$_open_browser" = "true" ]; then
+					gh pr view --web
+				fi
+			else
+				_pr_url="${_repo_url}/compare/${_base}...${_branch}?expand=1"
+				echo "GitHub CLI not available. Opening browser to create PR..."
+				echo "URL: $_pr_url"
+				if [ "$_open_browser" = "true" ]; then
+					gitflow_open_url "$_pr_url"
+				fi
+			fi
+			;;
+		gitlab)
+			if gitflow_has_cli_tool "glab"; then
+				echo "Creating merge request using GitLab CLI..."
+				
+				# Build glab options
+				_glab_opts="--source-branch \"$_branch\" --target-branch \"$_base\" --title \"$_title\" --fill"
+				
+				if [ "$_draft" = "true" ]; then
+					_glab_opts="$_glab_opts --draft"
+				fi
+				
+				if [ -n "$_assignee" ]; then
+					_glab_opts="$_glab_opts --assignee \"$_assignee\""
+				fi
+				
+				if [ -n "$_reviewer" ]; then
+					_glab_opts="$_glab_opts --reviewer \"$_reviewer\""
+				fi
+				
+				if [ -n "$_labels" ]; then
+					_glab_opts="$_glab_opts --label \"$_labels\""
+				fi
+				
+				eval glab mr create $_glab_opts
+				
+				if [ "$_open_browser" = "true" ]; then
+					glab mr view --web
+				fi
+			else
+				_pr_url="${_repo_url}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${_branch}&merge_request%5Btarget_branch%5D=${_base}"
+				echo "GitLab CLI not available. Opening browser to create MR..."
+				echo "URL: $_pr_url"
+				if [ "$_open_browser" = "true" ]; then
+					gitflow_open_url "$_pr_url"
+				fi
+			fi
+			;;
+		bitbucket)
+			_pr_url="${_repo_url}/pull-requests/new?source=${_branch}&dest=${_base}"
+			echo "Opening browser to create PR on Bitbucket..."
+			echo "URL: $_pr_url"
+			if [ "$_open_browser" = "true" ]; then
+				gitflow_open_url "$_pr_url"
+			fi
+			;;
+		*)
+			warn "Unknown forge. Cannot create PR automatically."
+			warn "Please create a PR manually for branch '$_branch' targeting '$_base'."
+			return 1
+			;;
+	esac
+
+	return 0
+}
+
+# gitflow_create_release()
+#
+# Create a GitHub/GitLab release for a tag
+#
+# Param $1: string Tag name (e.g., "v1.0.0")
+# Param $2: string Title (optional, defaults to tag name)
+# Return: 0 on success, 1 on failure
+#
+gitflow_create_release() {
+	local _tag _title _forge _repo_url
+
+	_tag="$1"
+	_title="${2:-$_tag}"
+	_forge=$(gitflow_detect_forge)
+	_repo_url=$(gitflow_get_repo_url)
+
+	case "$_forge" in
+		github)
+			if gitflow_has_cli_tool "gh"; then
+				echo "Creating GitHub release for tag '$_tag'..."
+				gh release create "$_tag" --generate-notes --title "$_title"
+				return $?
+			else
+				echo "GitHub CLI not available. Creating release manually..."
+				echo "Visit: ${_repo_url}/releases/new?tag=${_tag}"
+				gitflow_open_url "${_repo_url}/releases/new?tag=${_tag}"
+				return 0
+			fi
+			;;
+		gitlab)
+			if gitflow_has_cli_tool "glab"; then
+				echo "Creating GitLab release for tag '$_tag'..."
+				glab release create "$_tag" --notes "Release $_tag"
+				return $?
+			else
+				echo "GitLab CLI not available. Creating release manually..."
+				echo "Visit: ${_repo_url}/-/releases/new?tag_name=${_tag}"
+				gitflow_open_url "${_repo_url}/-/releases/new?tag_name=${_tag}"
+				return 0
+			fi
+			;;
+		bitbucket)
+			echo "Bitbucket does not have native releases. Tag '$_tag' has been created."
+			return 0
+			;;
+		*)
+			warn "Unknown forge. Cannot create release automatically."
+			warn "Tag '$_tag' has been created. Please create a release manually if needed."
+			return 1
+			;;
+	esac
 }
 
 # gitflow_create_squash_message()
