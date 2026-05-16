@@ -38,6 +38,17 @@ Claude reads this file when a user's intent matches one of these shapes:
 
 If the user clearly wants a different gitflow operation (`feature finish`, `release start`, etc.), see "What's available so far" above — explain plainly that it isn't shipped yet.
 
+## How this skill speaks (operating principle)
+
+The user's experience of using this skill is composed entirely from your voice — the words you, the agent, write back to them. Git's output (success *or* failure, stdout *or* stderr) never reaches the user raw. Every sentence the user reads in the conversation, you wrote.
+
+Two practical rules follow:
+
+- **Capture, don't echo.** When you run a command and need its output (a config value, a list of files), capture it into a variable (`OUT=$(cmd)`). When you don't need its output (the chirp from a successful checkout), suppress it — either with the substrate's silent flag (`git checkout -q`, `git fetch --quiet`, `git rev-parse --quiet`) or by redirecting (`>/dev/null 2>&1`). Don't let raw command output stream to the user.
+- **Translate the failures too.** When a command fails, capture its error output, read it, and turn it into a sentence the user can act on. (See "How to talk to the user when things go wrong" near the bottom for the principles.)
+
+One harness limitation worth naming honestly: in Claude Code, tool calls are visible to the user by default — they'll see *that* you ran `git checkout -b ...`, even with perfect output capture. What you control is whether the substrate is visibly *speaking* (its output reaches the user) or just visibly *working* (the tool ran, no output to read). Aim for the latter. The agent's voice should be the only voice the user has to read.
+
 ## Things to check before doing anything
 
 Three preconditions. Each one protects against a specific failure mode, and each maps to a single git command that confirms or denies it.
@@ -47,30 +58,30 @@ Three preconditions. Each one protects against a specific failure mode, and each
 Git-flow only makes sense inside a project that uses git for version control. If we're not in one, there's nothing to start.
 
 ```
-git rev-parse --is-inside-work-tree
+IN_REPO=$(git rev-parse --is-inside-work-tree 2>/dev/null)
 ```
 
-If that prints anything other than `true`, stop. Tell the user something like: "I don't see a project here — try `cd`-ing into your project folder first." Don't quote git's raw error message at them.
+(Capture into a variable; don't echo it.) If `IN_REPO` is anything other than `true`, stop. Tell the user something like: "I don't see a project here — try `cd`-ing into your project folder first."
 
 ### 2. The user has no unsaved work
 
 If there are changes that haven't been committed yet, switching branches could lose work or create confusing merges. We refuse to proceed.
 
 ```
-git status --porcelain
+DIRTY=$(git status --porcelain)
 ```
 
-If that produces any output, there's unsaved work. Read the output to learn *which* files have changes, and tell the user concretely: "You have unsaved changes in `src/auth.ts` and `README.md` — commit them or set them aside (`git stash`) first, then I'll start the feature." Naming the files matters; "you have changes" without telling them where is useless feedback.
+(Capture, don't echo.) If `DIRTY` is non-empty, there's unsaved work. Read the captured output to learn *which* files have changes, and tell the user concretely: "You have unsaved changes in `src/auth.ts` and `README.md` — commit them or set them aside (`git stash`) first, then I'll start the feature." Naming the files matters; "you have changes" without telling them where is useless feedback.
 
-### 3. Gitflow has been initialized in this repo
+### 3. Gitflow has been initialized in this project
 
 Git-flow uses a few git-config keys to remember which branch is production, which is develop, and what prefix to use for feature branches. Until those keys exist, we can't start a feature.
 
 ```
-git config --get gitflow.prefix.feature
+FEATURE_PREFIX=$(git config --get gitflow.prefix.feature 2>/dev/null)
 ```
 
-If this returns nothing (non-zero exit), the repo hasn't been set up for gitflow yet. Don't bail — the user clearly wants to use gitflow, so we'll do the setup inline. See the next section.
+(Capture, don't echo.) If `FEATURE_PREFIX` is empty, the project hasn't been set up for gitflow yet. Don't bail — the user clearly wants to use gitflow, so we'll do the setup inline. See the next section.
 
 ## First-time setup (when gitflow isn't initialized)
 
@@ -97,24 +108,30 @@ These are the historical git-flow-avh defaults and are what most projects use. E
 
 ### One thing to detect rather than assume
 
-Different repos use different names for the production branch. Repos created in the last few years usually use `main`; older repos use `master`. Check which one actually exists before defaulting:
+Different projects use different names for the production branch. Projects created in the last few years usually use `main`; older ones use `master`. Check which one actually exists before defaulting (use `--quiet` so the SHA doesn't leak to the user — you only care about the exit code):
 
 ```
-git rev-parse --verify main
-git rev-parse --verify master
+git rev-parse --verify --quiet main >/dev/null
+git rev-parse --verify --quiet master >/dev/null
 ```
 
 Default to the one that exists. If both exist, ask the user which one is the production branch — don't guess. If neither exists, something unusual is going on and the user should clarify.
 
 ### If `develop` doesn't exist, create it
 
-The development branch needs to exist before features can branch from it. If `git rev-parse --verify develop` fails, create it from the production branch:
+The development branch needs to exist before features can branch from it. Check (silently) whether it's there:
+
+```
+git rev-parse --verify --quiet develop >/dev/null
+```
+
+If that exits non-zero, create develop from the production branch:
 
 ```
 git branch develop <production-branch>
 ```
 
-Tell the user you did this — it's not a silent side effect.
+`git branch` is silent on success, so nothing leaks. Tell the user *you* did this — even though it's not a substrate chirp, it's not a silent side effect either; the user should know.
 
 ### Writing the config
 
@@ -144,10 +161,10 @@ The user might phrase it however they like, but it maps to:
 
 ### Step 1: Figure out the names
 
-Pull these from git config and the user's arguments:
+Pull these from git config and the user's arguments. Capture every value into a variable — none of these should print to the user.
 
-- **feature_prefix** ← `git config --get gitflow.prefix.feature` (typically `feature/`)
-- **develop_branch** ← `git config --get gitflow.branch.develop` (typically `develop`)
+- **feature_prefix** ← `$(git config --get gitflow.prefix.feature)` (typically `feature/`)
+- **develop_branch** ← `$(git config --get gitflow.branch.develop)` (typically `develop`)
 - **name** ← the user's argument. If missing, just ask: "What do you want to call the feature?"
 - **base** ← the user's second argument, or `develop_branch` if they didn't give one
 - **branch** ← `feature_prefix + name` (e.g. `feature/login-redesign`)
@@ -159,51 +176,51 @@ Two small hygiene checks:
 
 ### Step 2: Confirm the base branch actually exists
 
-We can't branch from a branch that isn't there.
+We can't branch from a branch that isn't there. Check silently — `--quiet` suppresses the error if missing, and `>/dev/null` discards the SHA if found:
 
 ```
-git rev-parse --verify --quiet refs/heads/<base>
+git rev-parse --verify --quiet refs/heads/<base> >/dev/null
 ```
 
-If this fails, tell the user the base branch is missing. If the missing branch is `develop` specifically, that means gitflow init didn't fully complete — offer to fix it.
+If this exits non-zero, tell the user the base branch is missing. If the missing branch is `develop` specifically, that means gitflow init didn't fully complete — offer to fix it.
 
 ### Step 3: Confirm the new branch doesn't already exist
 
 If the user already has a `feature/login-redesign` branch, we don't want to clobber it.
 
 ```
-git rev-parse --verify --quiet refs/heads/<branch>
+git rev-parse --verify --quiet refs/heads/<branch> >/dev/null
 ```
 
-If this **succeeds**, the branch already exists. Stop and tell the user concretely. Once `feature checkout` ships, offer to switch to the existing branch instead; for now, suggest `git checkout <branch>`.
+If this exits **zero** (success), the branch already exists. Stop and tell the user concretely. Once `feature checkout` ships, offer to switch to the existing branch instead; for now, suggest `git checkout <branch>`.
 
 ### Step 4: If the user asked, fetch first
 
-If they passed `--fetch` or `-F`:
+If they passed `--fetch` or `-F`, fetch silently — git's progress output is substrate noise; the agent should narrate the fetch in its own voice if it wants to:
 
 ```
-git fetch origin <base>
+git fetch --quiet origin <base>
 ```
 
-If the fetch fails (no network, auth issue, etc.), tell the user plainly — don't pretend it worked. Don't proceed.
+If the fetch fails (no network, auth issue, etc.), capture the stderr, translate it, and tell the user plainly — don't pretend it worked, don't quote git's raw error. Don't proceed.
 
 ### Step 5: Check that local base isn't out of date
 
 If a remote-tracking version of the base branch exists (`origin/<base>`), make sure the user's local copy matches it. Branching off a stale base is a real footgun — work gets done on top of old commits, and the eventual merge gets messy.
 
-First check whether the remote-tracking branch exists:
+First check (silently) whether the remote-tracking branch exists:
 
 ```
-git rev-parse --verify --quiet refs/remotes/origin/<base>
+git rev-parse --verify --quiet refs/remotes/origin/<base> >/dev/null
 ```
 
-If it does, compare local against origin:
+If it does, capture the local-vs-origin comparison:
 
 ```
-git rev-list --left-right --count <base>...origin/<base>
+COUNT=$(git rev-list --left-right --count <base>...origin/<base>)
 ```
 
-This prints two numbers: how many changes local is ahead, and how many it's behind, relative to origin. If local is behind, **don't proceed silently**. Tell the user:
+`COUNT` will be two whitespace-separated numbers: how many changes local is ahead, and how many it's behind, relative to origin. If local is behind, **don't proceed silently**. Tell the user:
 
 > Your local `develop` branch is 3 changes behind the version on origin. Add `--fetch` and I'll pull the latest, or run `git pull` yourself and retry.
 
@@ -211,11 +228,13 @@ If local is *ahead* of origin, that's usually fine — the user just hasn't push
 
 ### Step 6: Create the branch
 
+Create-and-switch in one command. Use `-q` so git doesn't chirp `Switched to a new branch '...'` at the user — that announcement should come from you, not the substrate:
+
 ```
-git checkout -b <branch> <base>
+git checkout -q -b <branch> <base>
 ```
 
-This both creates the new branch and switches the user onto it.
+If this fails (rare at this point — preconditions already checked), capture the stderr and translate it.
 
 ### Step 7: Remember where this branch came from
 
