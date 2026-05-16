@@ -5,276 +5,111 @@ description: Run Vincent Driessen's git-flow branching model — start feature b
 
 # gitflow
 
-This is the **gitflow skill**. When someone asks Claude Code to start a feature branch in a git project, this file is what Claude reads to figure out what to do. Everything that happens — the checks, the git commands, the messages back to the user — is described below in plain English.
+This is the gitflow skill. When a user wants to run a gitflow operation on their project, this file tells you how to invoke the workflow scripts in `scripts/` and how to translate their results into user-facing voice.
 
-If you're a person reading this out of curiosity (rather than an AI executing it): welcome. You're looking at the source code. There's no compiled binary behind this document, no bash script doing the real work. The prose you're reading *is* the implementation. That's the central idea: a workflow that used to take six thousand lines of shell scripts is now a few hundred lines of explanation, and the explanation is what runs.
+**The hybrid pattern:**
+- *You* (the agent) own intent parsing, judgment calls (init dialogue, error handling), and voice — every sentence the user reads, you wrote.
+- *The scripts* in `scripts/` own deterministic mechanics. They run git operations silently and return a single JSON object on stdout describing what happened.
+- The user sees only your voice. Script JSON and git output are your INPUTS, never the user's output.
 
-## What git-flow is, briefly
-
-Git-flow is a convention for managing branches in a git repository. It was published by Vincent Driessen in 2010 and adopted widely. The short version:
-
-- **Production code** lives on a long-lived branch (usually `main` or `master`).
-- **Day-to-day development** happens on a parallel long-lived branch called `develop`.
-- **New features** are built on short-lived branches that start from `develop`, get merged back into `develop` when ready, and are deleted.
-- **Releases** are prepared on short-lived branches that start from `develop`, get merged into both `main` *and* `develop` (with a version tag) when they ship.
-- **Hotfixes** are emergency fixes that branch from `main`, get merged back into both `main` and `develop`, and also get a tag.
-
-The historical implementation (`git-flow-avh`, then `gitflow-cjs`) wrapped these flows in bash scripts so people could type `git flow feature start login` instead of remembering all the branch-and-merge steps. This rewrite keeps the same flows but moves the implementation into prose that an AI agent reads and executes — letting the agent handle intent ("I want to start work on the login redesign"), validation ("is your working tree clean?"), and conversation ("local develop is behind origin — fetch first?") while git does the mechanical work.
+(For background on what git-flow is and why this skill is shaped this way, see `BACKGROUND.md` in this folder — but you don't need to load it to do the work.)
 
 ## What's available so far
 
-- **`feature start`** — create a new feature branch from develop (or another base). Includes inline first-time setup for repos that haven't been gitflow-configured yet.
+- **`feature start`** — create a new feature branch (with inline first-time setup if the project isn't gitflow-configured)
 
-What's not built yet, but coming: `feature finish`, `feature publish`, `feature checkout`, `feature list`, and the full release / hotfix / bugfix / support flows. If a user asks for one of these, say so plainly and don't improvise — the workflows have subtleties that matter.
+Not yet shipped: `feature finish`, `feature publish`, `feature checkout`, `feature list`, plus release/hotfix/bugfix/support workflows. If the user asks for any of these, say so plainly — don't improvise.
 
 ## When this skill runs
 
-Claude reads this file when a user's intent matches one of these shapes:
+Read for intent, not exact wording. Examples that match:
 
-- "start a feature called X" / "start a new feature for X"
+- "start a feature called X"
+- "I want to begin work on the search rewrite"
 - "create a gitflow feature branch"
-- "I want to begin work on the search rewrite" (or similar — read for intent, not exact wording)
-- The literal command `git flow feature start X` — treat that as intent, not as a shell instruction to forward
+- The literal command `git flow feature start X` (treat as intent, not as a shell instruction to forward)
 
-If the user clearly wants a different gitflow operation (`feature finish`, `release start`, etc.), see "What's available so far" above — explain plainly that it isn't shipped yet.
+## Operating principle — agent voice is the only UX surface
 
-## How this skill speaks (operating principle)
+Every sentence the user reads in the conversation, you wrote. Script output and git output never reach the user raw — capture them, parse them, translate. If a tool call returns text and you don't immediately compose a user-facing message from it, you have a leak.
 
-The user's experience of using this skill is composed entirely from your voice — the words you, the agent, write back to them. Git's output (success *or* failure, stdout *or* stderr) never reaches the user raw. Every sentence the user reads in the conversation, you wrote.
+Two specific rules:
+- **Don't echo script JSON.** Parse it and speak about it.
+- **Don't run git commands the scripts already cover.** If you find yourself running `git status` or `git diff` to "investigate," step back — the script captured that state already, and ad-hoc git calls leak substrate output.
 
-Two practical rules follow:
-
-- **Capture, don't echo.** When you run a command and need its output (a config value, a list of files), capture it into a variable (`OUT=$(cmd)`). When you don't need its output (the chirp from a successful checkout), suppress it — either with the substrate's silent flag (`git checkout -q`, `git fetch --quiet`, `git rev-parse --quiet`) or by redirecting (`>/dev/null 2>&1`). Don't let raw command output stream to the user.
-- **Translate the failures too.** When a command fails, capture its error output, read it, and turn it into a sentence the user can act on. (See "How to talk to the user when things go wrong" near the bottom for the principles.)
-
-One harness limitation worth naming honestly: in Claude Code, tool calls are visible to the user by default — they'll see *that* you ran `git checkout -b ...`, even with perfect output capture. What you control is whether the substrate is visibly *speaking* (its output reaches the user) or just visibly *working* (the tool ran, no output to read). Aim for the latter. The agent's voice should be the only voice the user has to read.
-
-## Things to check before doing anything
-
-Three preconditions. Each one protects against a specific failure mode, and each maps to a single git command that confirms or denies it.
-
-### 1. The user is inside a project
-
-Git-flow only makes sense inside a project that uses git for version control. If we're not in one, there's nothing to start.
+## `feature start` — invocation
 
 ```
-IN_REPO=$(git rev-parse --is-inside-work-tree 2>/dev/null)
+python3 ~/.claude/skills/gitflow/scripts/feature_start.py <name> [--base BASE] [--fetch]
 ```
 
-(Capture into a variable; don't echo it.) If `IN_REPO` is anything other than `true`, stop. Tell the user something like: "I don't see a project here — try `cd`-ing into your project folder first."
+Run from the user's project directory (the script inherits your cwd). Capture stdout; it will be exactly one line of JSON.
 
-### 2. The user has no unsaved work
+### Result statuses
 
-If there are changes that haven't been committed yet, switching branches could lose work or create confusing merges. We refuse to proceed.
+| Status            | What it means                                       | What to do                                                                                                                                                                                                |
+| ----------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ok`              | Branch created. JSON includes `branch`, `base`.     | Tell the user: created `<branch>` from `<base>`, they're on it now, start working. Mention that `feature finish` isn't shipped — for now `git merge --no-ff` into `<base>` manually.                      |
+| `not_in_repo`     | User isn't inside a git project.                    | "I don't see a project here — try `cd`-ing into your project folder first."                                                                                                                               |
+| `dirty_tree`      | Unsaved changes. JSON includes `files`.             | Name the files: "You have unsaved changes in `<files>` — commit them or set them aside (`git stash`) first, then I'll start the feature." Stop. Don't auto-fix; let the user decide.                     |
+| `not_initialized` | Gitflow config missing. JSON includes `has_main`, `has_master`, `has_develop`. | Walk the user through init (see below), then re-invoke `feature_start.py`.                                                                                |
+| `base_missing`    | Base branch doesn't exist. JSON includes `base`.    | "The base branch `<base>` doesn't exist." If `<base>` is `develop`, offer to repair init.                                                                                                                 |
+| `branch_exists`   | Branch already exists. JSON includes `branch`.      | "`<branch>` already exists. Want to switch to it? (`git checkout <branch>`)" — once `feature checkout` ships, route to that instead.                                                                      |
+| `behind_origin`   | Local base is stale. JSON includes `base`, `behind`. | "Your local `<base>` is `<behind>` changes behind origin. Add `--fetch` and I'll pull the latest, or run `git pull` yourself and retry."                                                                  |
+| `fetch_failed`    | `--fetch` was passed; fetch failed. `error_detail`. | Look at `error_detail` for clues (network? auth?) and translate into plain language. Don't quote the raw error.                                                                                           |
+| `unknown_error`   | Unexpected git error. `error_detail`.               | Translate `error_detail` into the user's language; suggest retry or escalate.                                                                                                                             |
 
-```
-DIRTY=$(git status --porcelain)
-```
+## Init dialogue (when `feature_start.py` returns `not_initialized`)
 
-(Capture, don't echo.) If `DIRTY` is non-empty, there's unsaved work. Read the captured output to learn *which* files have changes, and tell the user concretely: "You have unsaved changes in `src/auth.ts` and `README.md` — commit them or set them aside (`git stash`) first, then I'll start the feature." Naming the files matters; "you have changes" without telling them where is useless feedback.
+The script returns `has_main`, `has_master`, `has_develop` flags. Use them to pick defaults intelligently:
 
-### 3. Gitflow has been initialized in this project
+- **Production branch:** if only `has_main`, default to `main`. If only `has_master`, default to `master`. If both, ask the user which one is production. If neither, something's unusual — clarify before continuing.
+- **Develop:** default to `develop` (the init script will create it from production if missing).
+- **Prefixes:** the historical standard — `feature/`, `bugfix/`, `release/`, `hotfix/`, `support/`, empty string for version tag.
 
-Git-flow uses a few git-config keys to remember which branch is production, which is develop, and what prefix to use for feature branches. Until those keys exist, we can't start a feature.
+Tell the user what you're about to set up in one sentence:
 
-```
-FEATURE_PREFIX=$(git config --get gitflow.prefix.feature 2>/dev/null)
-```
+> This project isn't set up for gitflow yet — I'll configure it with production: `<prod>`, develop: `develop`, feature prefix: `feature/`. Say so if you want different values.
 
-(Capture, don't echo.) If `FEATURE_PREFIX` is empty, the project hasn't been set up for gitflow yet. Don't bail — the user clearly wants to use gitflow, so we'll do the setup inline. See the next section.
-
-## First-time setup (when gitflow isn't initialized)
-
-The setup is conversational, not a dialog box. Tell the user something like:
-
-> This project isn't set up for gitflow yet — I'll configure it. I'll use the standard defaults unless you'd rather pick something else.
-
-Then list what you're about to write (see "Defaults" below). Accept overrides if the user offers them. Otherwise proceed.
-
-### Defaults
-
-These are the historical git-flow-avh defaults and are what most projects use. Each is a key written into the user's git config.
-
-| What it controls          | Git config key                  | Default value |
-| ------------------------- | ------------------------------- | ------------- |
-| Production branch name    | `gitflow.branch.master`         | `main`        |
-| Development branch name   | `gitflow.branch.develop`        | `develop`     |
-| Feature branch prefix     | `gitflow.prefix.feature`        | `feature/`    |
-| Bugfix branch prefix      | `gitflow.prefix.bugfix`         | `bugfix/`     |
-| Release branch prefix     | `gitflow.prefix.release`        | `release/`    |
-| Hotfix branch prefix      | `gitflow.prefix.hotfix`         | `hotfix/`     |
-| Support branch prefix     | `gitflow.prefix.support`        | `support/`    |
-| Version tag prefix        | `gitflow.prefix.versiontag`     | *(none)*      |
-
-### One thing to detect rather than assume
-
-Different projects use different names for the production branch. Projects created in the last few years usually use `main`; older ones use `master`. Check which one actually exists before defaulting (use `--quiet` so the SHA doesn't leak to the user — you only care about the exit code):
+If they accept (or stay quiet), invoke:
 
 ```
-git rev-parse --verify --quiet main >/dev/null
-git rev-parse --verify --quiet master >/dev/null
+python3 ~/.claude/skills/gitflow/scripts/init.py \
+  --production <prod> --develop develop \
+  --feature-prefix feature/ --bugfix-prefix bugfix/ \
+  --release-prefix release/ --hotfix-prefix hotfix/ \
+  --support-prefix support/ --version-tag-prefix ""
 ```
 
-Default to the one that exists. If both exist, ask the user which one is the production branch — don't guess. If neither exists, something unusual is going on and the user should clarify.
+### Init script result statuses
 
-### If `develop` doesn't exist, create it
+| Status                   | What it means                                | What to do                                                                                       |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `ok`                     | Config written. JSON includes `production`, `develop`, `develop_created`, `feature_prefix`. | One-line confirmation; if `develop_created` is true, mention you created develop from production. Then re-invoke `feature_start.py`. |
+| `not_in_repo`            | Caller isn't in a git project.               | Same as for `feature_start.py`.                                                                  |
+| `production_missing`     | Specified production branch doesn't exist.   | "I can't find a `<production>` branch in this project. Which branch holds your production code?" |
+| `develop_create_failed`  | Couldn't create develop from production.     | Translate `error_detail`; suggest the user check branch permissions or state.                    |
+| `unknown_error`          | Unexpected git error.                        | Translate `error_detail`.                                                                        |
 
-The development branch needs to exist before features can branch from it. Check (silently) whether it's there:
-
-```
-git rev-parse --verify --quiet develop >/dev/null
-```
-
-If that exits non-zero, create develop from the production branch:
-
-```
-git branch develop <production-branch>
-```
-
-`git branch` is silent on success, so nothing leaks. Tell the user *you* did this — even though it's not a substrate chirp, it's not a silent side effect either; the user should know.
-
-### Writing the config
-
-For each setting, run:
-
-```
-git config <key> <value>
-```
-
-When all keys are written, give the user a one-line confirmation:
-
-> Gitflow initialized — production: main, develop: develop, feature prefix: feature/.
-
-Then proceed to whatever they originally asked for.
-
-## The `feature start` workflow
-
-When the user wants to start a feature, here's what happens.
-
-### What the command looks like
-
-The user might phrase it however they like, but it maps to:
-
-- `feature start <name>` — start a feature from `develop`
-- `feature start <name> <base>` — start it from `<base>` instead
-- Either form might include `--fetch` (or `-F`) to pull from origin first
-
-### Step 1: Figure out the names
-
-Pull these from git config and the user's arguments. Capture every value into a variable — none of these should print to the user.
-
-- **feature_prefix** ← `$(git config --get gitflow.prefix.feature)` (typically `feature/`)
-- **develop_branch** ← `$(git config --get gitflow.branch.develop)` (typically `develop`)
-- **name** ← the user's argument. If missing, just ask: "What do you want to call the feature?"
-- **base** ← the user's second argument, or `develop_branch` if they didn't give one
-- **branch** ← `feature_prefix + name` (e.g. `feature/login-redesign`)
-
-Two small hygiene checks:
-
-- If the user typed the prefix themselves (e.g. `feature start feature/foo`), strip it so we don't end up with `feature/feature/foo`.
-- If the name contains spaces or shell-unfriendly characters, warn the user and suggest a clean slug. Don't silently mangle their input.
-
-### Step 2: Confirm the base branch actually exists
-
-We can't branch from a branch that isn't there. Check silently — `--quiet` suppresses the error if missing, and `>/dev/null` discards the SHA if found:
-
-```
-git rev-parse --verify --quiet refs/heads/<base> >/dev/null
-```
-
-If this exits non-zero, tell the user the base branch is missing. If the missing branch is `develop` specifically, that means gitflow init didn't fully complete — offer to fix it.
-
-### Step 3: Confirm the new branch doesn't already exist
-
-If the user already has a `feature/login-redesign` branch, we don't want to clobber it.
-
-```
-git rev-parse --verify --quiet refs/heads/<branch> >/dev/null
-```
-
-If this exits **zero** (success), the branch already exists. Stop and tell the user concretely. Once `feature checkout` ships, offer to switch to the existing branch instead; for now, suggest `git checkout <branch>`.
-
-### Step 4: If the user asked, fetch first
-
-If they passed `--fetch` or `-F`, fetch silently — git's progress output is substrate noise; the agent should narrate the fetch in its own voice if it wants to:
-
-```
-git fetch --quiet origin <base>
-```
-
-If the fetch fails (no network, auth issue, etc.), capture the stderr, translate it, and tell the user plainly — don't pretend it worked, don't quote git's raw error. Don't proceed.
-
-### Step 5: Check that local base isn't out of date
-
-If a remote-tracking version of the base branch exists (`origin/<base>`), make sure the user's local copy matches it. Branching off a stale base is a real footgun — work gets done on top of old commits, and the eventual merge gets messy.
-
-First check (silently) whether the remote-tracking branch exists:
-
-```
-git rev-parse --verify --quiet refs/remotes/origin/<base> >/dev/null
-```
-
-If it does, capture the local-vs-origin comparison:
-
-```
-COUNT=$(git rev-list --left-right --count <base>...origin/<base>)
-```
-
-`COUNT` will be two whitespace-separated numbers: how many changes local is ahead, and how many it's behind, relative to origin. If local is behind, **don't proceed silently**. Tell the user:
-
-> Your local `develop` branch is 3 changes behind the version on origin. Add `--fetch` and I'll pull the latest, or run `git pull` yourself and retry.
-
-If local is *ahead* of origin, that's usually fine — the user just hasn't pushed their work yet. Mention it so they know, then continue.
-
-### Step 6: Create the branch
-
-Create-and-switch in one command. Use `-q` so git doesn't chirp `Switched to a new branch '...'` at the user — that announcement should come from you, not the substrate:
-
-```
-git checkout -q -b <branch> <base>
-```
-
-If this fails (rare at this point — preconditions already checked), capture the stderr and translate it.
-
-### Step 7: Remember where this branch came from
-
-When the user eventually finishes the feature, the finish workflow needs to know which branch to merge back into. Record it in git config:
-
-```
-git config gitflow.branch.<branch>.base <base>
-```
-
-This is required even though `feature finish` isn't shipped yet — both the future prose version and the legacy bash scripts read this key.
-
-### Step 8: Tell the user what happened
-
-Keep the message informative and short. Something like:
-
-> Created `feature/login-redesign` from `develop`. You're on it now — start working. When you're done, you'll run `feature finish login-redesign` (not shipped yet — for now, merge it back into `develop` manually with `git merge --no-ff`).
-
-If first-time setup also happened in this same flow, mention that in the same summary so the user has a complete picture of what changed.
+After init succeeds, re-run `feature_start.py` with the original args to actually start the feature. The user's final message should cover both: "Set up gitflow for this project. Created `feature/<name>` from `develop` — start working."
 
 ## How to talk to the user when things go wrong
 
-The historical bash printed git's raw error messages and exited with a numeric code. This rewrite does not. Every error path produces a sentence the user can act on, in your voice — not git's.
+Same principles regardless of where the failure came from (script, git, your own logic):
 
-Four principles:
-
-1. **Don't quote `fatal: ...` lines.** Translate them. "fatal: not a git repository" becomes "I don't see a project here — try `cd`-ing into your project folder."
-2. **Prefer the words the user thinks in.** "Working tree dirty" is jargon. "You have unsaved changes in `src/auth.ts`" lands. Use the natural word unless precision genuinely requires the technical one.
-3. **Name the specific files and branches.** Vague messages are dead-ends; concrete ones are actionable.
-4. **Always suggest the next move.** Every error message includes either a remedy or a question. Never a dead-end.
-5. **Stay terse.** Two sentences max for an error. Calm and direct, not chatty.
+1. **Don't quote raw JSON or git output.** Translate.
+2. **Prefer the words the user thinks in.** "Project" over "git repository." "Unsaved changes" over "uncommitted changes." Workflow vocabulary the user opted into (`branch`, `merge`, `develop`, `feature/`) stays.
+3. **Name files and branches.** Concrete beats vague.
+4. **Always suggest the next move.** Every message has a remedy or a question — never a dead-end.
+5. **Stay terse.** Two sentences max for an error. Calm and direct.
 
 ## Things this skill won't do
 
-- **Invent commands.** If the user asks for `feature finish`, `release start`, or anything else not in the "What's available so far" list, say so plainly. Don't improvise — these workflows have subtleties (rebasing, version tags, merging into multiple branches) that are easy to get subtly wrong.
-- **Run destructive operations.** No force-push, no `branch -D`, no `reset --hard` as part of `feature start`. None of them are needed for the workflows here.
-- **Push to remote.** Unless the user explicitly asks, we stay local.
-- **Skip the precondition checks** because "the user seems to know what they're doing." The checks are cheap. The failure mode without them — stale base, lost work, surprising merge — is expensive.
+- **Invent commands.** If the user asks for `feature finish`, `release start`, or anything else not in "What's available so far," say so plainly. Don't improvise — these workflows have subtleties (rebasing, version tags, merging into multiple branches) that are easy to get subtly wrong.
+- **Modify the user's files or git history on their behalf.** Don't run `git add`, `git commit`, `git stash`, `git reset`, etc. as a "fix" for a precondition. Stop. Tell the user. Wait for them to act.
+- **Push to remote.** Unless the user explicitly asks.
+- **Run ad-hoc git inspection commands** (`git status`, `git diff`, `git log`) that the scripts already cover. They leak substrate output and duplicate work the script just did.
 
 ## Where this is headed
 
-When the rest of the workflows arrive, they'll live as additional sections in this file (or in sibling files under `skills/gitflow/`), following the same shape: what the user might ask for, things to check, step-by-step, how to talk to the user. The first-time-setup section and the error-handling principles are shared across all of them.
-
-The non-feature workflows (release, hotfix, bugfix, support) are larger — each needs its own section — but the architectural pattern is identical: prose for intent and validation, git for mechanical operations, the agent's voice for the conversation in between.
+Each new workflow gets its own script in `scripts/` and its own table-of-statuses section in this file. The pattern stays identical: script returns JSON, agent translates to voice, user reads the agent.

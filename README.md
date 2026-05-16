@@ -6,9 +6,9 @@ A prose-native implementation of [Vincent Driessen's git-flow branching model](h
 
 gitflow-cjs began as a fork of `git-flow-avh` — ~6,000 lines of bash implementing the git-flow workflow. That codebase is frozen on `legacy-main` / `legacy-develop`.
 
-This repo's `develop` branch is the **modernization**: the same workflow, re-expressed as prose that an agent reads and executes against git directly. No bash scripts, no `shFlags`, no compiled artifact between the workflow description and your repository.
+This repo's `develop` branch is the **modernization**: a hybrid agent + script architecture. The same git-flow workflows, but split into two layers — prose that an AI agent reads to handle intent, judgment, and the conversation with the user, plus small Python scripts that handle the deterministic mechanics (git operations, state checks, config writes). The user only ever reads what the agent wrote; everything else is plumbing.
 
-The thesis: git-flow is fundamentally a *workflow* — a set of conventions about branches, merges, and tags. The historical bash encoded those conventions in 6k lines of imperative code that no one wanted to read or test. Re-expressed as prose, the same workflow is small enough to read in one sitting, the spec and the implementation are the same artifact, and the agent layer turns every error path into a sentence the user can act on.
+The thesis: git-flow is fundamentally a *workflow* — a set of conventions about branches, merges, and tags. The historical bash encoded those conventions in 6k lines of imperative code that no one wanted to read or test. The new shape separates the workflow's *intent and voice* (in prose) from its *mechanics* (in scripts). The prose is small enough to read in one sitting; the scripts are small enough to audit; together they're a fraction of the legacy codebase's size, and the agent layer turns every state — success and failure — into a sentence the user can act on.
 
 ## Project Status
 
@@ -40,9 +40,24 @@ Then in any git repo, ask Claude Code to start a feature:
 
 The `gitflow` skill is invoked automatically when your intent matches. No CLI to learn — the conversation is the interface.
 
+**Requires:** `python3` on `PATH` (any 3.x). Git, obviously.
+
+## Inside the skill
+
+```
+skills/gitflow/
+├── SKILL.md          ← what the agent reads and follows (intent, judgment, voice)
+├── BACKGROUND.md     ← humans-only: what git-flow is, why this shape
+└── scripts/
+    ├── feature_start.py   ← mechanics for `feature start`
+    └── init.py            ← mechanics for first-time setup
+```
+
+The agent loads `SKILL.md`, invokes a script, parses its JSON result, and writes back to the user. Scripts return structured statuses (`ok`, `dirty_tree`, `not_initialized`, `branch_exists`, etc.); the skill maps each one to a sentence in the agent's voice.
+
 ## Why not a CLI
 
-A standalone CLI is a likely follow-up (so that non-Claude-Code users can adopt it). But the prose-as-canonical thesis is sharpest when the agent layer is provided — the workflow description doesn't have to be retrofitted into argument parsing, exit codes, and stderr-formatted error messages. Those re-emerge when the user wants them, but they aren't the design center.
+A standalone CLI is a likely follow-up (so that non-Claude-Code users can adopt it). But the agent + script split is sharpest when the agent layer is provided — the workflow doesn't need argument parsing, exit codes, or stderr-formatted error messages glued onto it for human consumption. Those re-emerge when the user wants them, but they aren't the design center.
 
 ## Legacy
 
